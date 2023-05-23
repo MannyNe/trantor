@@ -209,13 +209,48 @@ impl DB {
     }
 }
 
+#[derive(FromRow, Serialize)]
+pub struct SingleSource {
+    name: String,
+    visitor_count: i64,
+}
+
 impl DB {
     pub async fn create_source(&self, name: &str) -> Result<()> {
-        sqlx::query!(r#"INSERT INTO sources (name) VALUES ($1)"#, name)
-            .fetch_one(&self.pool)
-            .await?;
+        let _ = sqlx::query!(
+            r#"INSERT INTO sources (name) VALUES ($1) RETURNING id"#,
+            name
+        )
+        .fetch_one(&self.pool)
+        .await?;
 
         Ok(())
+    }
+
+    pub async fn list_sources(&self) -> Result<Vec<SingleSource>> {
+        let sources = sqlx::query_as!(
+            SingleSource,
+            r#"
+            SELECT sources.name as "name!",
+                COUNT(visitors.id) as "visitor_count!"
+            FROM sources
+                LEFT JOIN visitors ON visitors.source_id = sources.id
+            GROUP BY sources.name
+        "#
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(sources)
+    }
+
+    pub async fn count_visitors_without_source(&self) -> Result<i64> {
+        let rec =
+            sqlx::query!(r#"SELECT COUNT(id) as count FROM visitors WHERE source_id IS NULL"#)
+                .fetch_one(&self.pool)
+                .await?;
+
+        rec.count.ok_or_else(|| eyre::eyre!("No count found"))
     }
 }
 

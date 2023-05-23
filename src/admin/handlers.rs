@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    db::{SingleVisitor, DB},
+    db::{SingleSource, SingleVisitor, DB},
     errors::DatabaseError,
 };
 
@@ -57,4 +57,29 @@ pub async fn create_source(
         warp::reply(),
         warp::http::StatusCode::CREATED,
     ))
+}
+
+#[derive(Serialize)]
+struct ListSourcesResponse {
+    sources: Vec<SingleSource>,
+    direct_visitors: i64,
+}
+
+pub async fn list_sources(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Listing sources");
+
+    let sources = db.list_sources().await.map_err(|e| {
+        log::error!("Error listing sources: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    let visitors_without_source = db.count_visitors_without_source().await.map_err(|e| {
+        log::error!("Error counting visitors without source: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    Ok(warp::reply::json(&ListSourcesResponse {
+        sources,
+        direct_visitors: visitors_without_source,
+    }))
 }

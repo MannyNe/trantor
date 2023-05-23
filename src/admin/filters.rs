@@ -19,10 +19,18 @@ pub fn make_admin_routes(
     let create_source = warp::path!("sources")
         .and(warp::post())
         .and(warp::body::json::<CreateSourceRequest>())
-        .and(with_db(db))
+        .and(with_db(db.clone()))
         .and_then(handlers::create_source);
 
-    warp::path("admin")
-        .and(count_visitors.or(list_visitors))
-        .or(create_source)
+    let list_sources = warp::path!("sources")
+        .and(warp::get())
+        .and(with_db(db))
+        .and_then(handlers::list_sources);
+
+    warp::path("admin").and(
+        count_visitors
+            .or(list_visitors)
+            .or(create_source)
+            .or(list_sources),
+    )
 }
