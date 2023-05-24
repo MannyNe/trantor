@@ -2,7 +2,7 @@ use std::{convert::Infallible, sync::Arc};
 
 use color_eyre::{eyre, Result};
 use serde::Serialize;
-use sqlx::{types::chrono::NaiveDateTime, FromRow, PgPool};
+use sqlx::{postgres::types::PgInterval, types::chrono::NaiveDateTime, FromRow, PgPool};
 use uaparser::Parser;
 use warp::Filter;
 
@@ -156,6 +156,21 @@ impl NewSessionData {
     }
 }
 
+#[derive(FromRow, Serialize)]
+pub struct SingleSession {
+    id: String,
+    title: String,
+    pathname: String,
+    #[serde(with = "native_date_format")]
+    start_timestamp: NaiveDateTime,
+    #[serde(with = "optional_native_date_format")]
+    end_timestamp: Option<NaiveDateTime>,
+    #[serde(with = "optional_pg_interval_format")]
+    start_latency: Option<PgInterval>,
+    #[serde(with = "optional_pg_interval_format")]
+    end_latency: Option<PgInterval>,
+}
+
 impl DB {
     pub async fn create_session(&self, data: &NewSessionData) -> Result<()> {
         sqlx::query!(
@@ -206,6 +221,26 @@ impl DB {
         .await?;
 
         Ok(())
+    }
+
+    pub async fn list_sessions(&self) -> Result<Vec<SingleSession>> {
+        let sessions = sqlx::query_as!(
+            SingleSession,
+            r#"
+            SELECT session_id as id,
+                title,
+                pathname,
+                start_timestamp,
+                end_timestamp,
+                created_at - start_timestamp as start_latency,
+                ended_at - end_timestamp as end_latency
+            FROM sessions
+        "#
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(sessions)
     }
 }
 
@@ -274,5 +309,53 @@ mod native_date_format {
         S: Serializer,
     {
         serializer.serialize_i64(date.timestamp_millis())
+    }
+}
+
+mod optional_native_date_format {
+    use serde::{self, Serializer};
+    use sqlx::types::chrono::NaiveDateTime;
+
+    // The signature of a serialize_with function must follow the pattern:
+    //
+    //    fn serialize<S>(&T, S) -> Result<S::Ok, S::Error>
+    //    where
+    //        S: Serializer
+    //
+    // although it may also be generic over the input types T.
+    pub fn serialize<S>(date: &Option<NaiveDateTime>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match date {
+            Some(date) => serializer.serialize_i64(date.timestamp_millis()),
+            None => serializer.serialize_none(),
+        }
+    }
+}
+
+mod optional_pg_interval_format {
+    use serde::{self, Serializer};
+    use sqlx::postgres::types::PgInterval;
+
+    // The signature of a serialize_with function must follow the pattern:
+    //
+    //    fn serialize<S>(&T, S) -> Result<S::Ok, S::Error>
+    //    where
+    //        S: Serializer
+    //
+    // although it may also be generic over the input types T.
+    pub fn serialize<S>(interval: &Option<PgInterval>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match interval {
+            Some(interval) => serializer.serialize_some(&serde_json::json!({
+                "months": interval.months,
+                "days": interval.days,
+                "microseconds": interval.microseconds,
+            })),
+            None => serializer.serialize_none(),
+        }
     }
 }

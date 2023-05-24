@@ -83,3 +83,14 @@ pub async fn list_sources(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
         direct_visitors: visitors_without_source,
     }))
 }
+
+pub async fn list_sessions(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Listing sessions");
+
+    let sessions = db.list_sessions().await.map_err(|e| {
+        log::error!("Error listing sessions: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    Ok(warp::reply::json(&sessions))
+}

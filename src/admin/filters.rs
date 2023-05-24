@@ -24,13 +24,19 @@ pub fn make_admin_routes(
 
     let list_sources = warp::path!("sources")
         .and(warp::get())
-        .and(with_db(db))
+        .and(with_db(db.clone()))
         .and_then(handlers::list_sources);
+
+    let list_sessions = warp::path!("sessions")
+        .and(warp::get())
+        .and(with_db(db))
+        .and_then(handlers::list_sessions);
 
     warp::path("admin").and(
         count_visitors
             .or(list_visitors)
             .or(create_source)
-            .or(list_sources),
+            .or(list_sources)
+            .or(list_sessions),
     )
 }
