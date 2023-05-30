@@ -94,3 +94,33 @@ pub async fn list_sessions(db: DB) -> Result<impl warp::Reply, warp::Rejection> 
 
     Ok(warp::reply::json(&sessions))
 }
+
+pub async fn home_page(
+    db: DB,
+    template: liquid::Template,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Rendering home page");
+
+    let visitors = db.count_visitors().await.map_err(|e| {
+        log::error!("Error counting visitors: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+    let sessions = db.count_sessions().await.map_err(|e| {
+        log::error!("Error counting sessions: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+    let sources = db.count_sources().await.map_err(|e| {
+        log::error!("Error listing sources: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    let body = template
+        .render(&liquid::object!({
+            "visitors": visitors,
+            "sessions": sessions,
+            "sources": sources,
+        }))
+        .unwrap();
+
+    Ok(warp::reply::html(body))
+}

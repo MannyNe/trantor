@@ -1,3 +1,6 @@
+use std::sync::Arc;
+
+use tokio::fs;
 use warp::Filter;
 
 use super::{handlers, CreateSourceRequest};
@@ -29,14 +32,46 @@ pub fn make_admin_routes(
 
     let list_sessions = warp::path!("sessions")
         .and(warp::get())
-        .and(with_db(db))
+        .and(with_db(db.clone()))
         .and_then(handlers::list_sessions);
+
+    let liquid_parser = liquid::ParserBuilder::with_stdlib()
+        .build()
+        .expect("Failed to build liquid parser");
+    let liquid_parser = Arc::new(liquid_parser);
+
+    fn with_template(
+        template_file: &'static str,
+        liquid_parser: Arc<liquid::Parser>,
+    ) -> impl Filter<Extract = (liquid::Template,), Error = std::convert::Infallible> + Clone {
+        warp::any().map(move || liquid_parser.clone()).then(
+            move |liquid_parser: Arc<liquid::Parser>| async move {
+                let home_page = fs::read_to_string(template_file)
+                    .await
+                    .expect("Failed to read template file");
+
+                let home_page_template = liquid_parser
+                    .parse(&home_page)
+                    .expect("Failed to parse template");
+
+                log::info!("Loaded template from {}", template_file);
+
+                home_page_template
+            },
+        )
+    }
+
+    let admin_home_page = warp::path::end()
+        .and(with_db(db))
+        .and(with_template("templates/home.html", liquid_parser))
+        .and_then(handlers::home_page);
 
     warp::path("admin").and(
         count_visitors
             .or(list_visitors)
             .or(create_source)
             .or(list_sources)
-            .or(list_sessions),
+            .or(list_sessions)
+            .or(admin_home_page),
     )
 }

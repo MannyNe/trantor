@@ -128,6 +128,15 @@ impl DB {
 
         Ok(visitors)
     }
+
+    pub async fn count_visitors_without_source(&self) -> Result<i64> {
+        let rec =
+            sqlx::query!(r#"SELECT COUNT(id) as count FROM visitors WHERE source_id IS NULL"#)
+                .fetch_one(&self.pool)
+                .await?;
+
+        rec.count.ok_or_else(|| eyre::eyre!("No count found"))
+    }
 }
 
 pub struct NewSessionData {
@@ -242,6 +251,14 @@ impl DB {
 
         Ok(sessions)
     }
+
+    pub async fn count_sessions(&self) -> Result<i64> {
+        let rec = sqlx::query!(r#"SELECT COUNT(id) as count FROM sessions"#)
+            .fetch_one(&self.pool)
+            .await?;
+
+        rec.count.ok_or_else(|| eyre::eyre!("No count found"))
+    }
 }
 
 #[derive(FromRow, Serialize)]
@@ -279,11 +296,10 @@ impl DB {
         Ok(sources)
     }
 
-    pub async fn count_visitors_without_source(&self) -> Result<i64> {
-        let rec =
-            sqlx::query!(r#"SELECT COUNT(id) as count FROM visitors WHERE source_id IS NULL"#)
-                .fetch_one(&self.pool)
-                .await?;
+    pub async fn count_sources(&self) -> Result<i64> {
+        let rec = sqlx::query!(r#"SELECT COUNT(id) as count FROM sources"#)
+            .fetch_one(&self.pool)
+            .await?;
 
         rec.count.ok_or_else(|| eyre::eyre!("No count found"))
     }
