@@ -3,8 +3,11 @@ use std::sync::Arc;
 use tokio::fs;
 use warp::Filter;
 
-use super::{handlers, CreateSourceRequest};
-use crate::db::{with_db, DB};
+use super::{handlers, CreateSourceRequest, CreateUserRequest};
+use crate::{
+    db::{with_db, DB},
+    errors::InvalidToken,
+};
 
 pub fn make_admin_routes(
     db: DB,
@@ -62,9 +65,34 @@ pub fn make_admin_routes(
     }
 
     let admin_home_page = warp::path::end()
-        .and(with_db(db))
+        .and(with_db(db.clone()))
         .and(with_template("templates/home.html", liquid_parser))
         .and_then(handlers::home_page);
+
+    let create_user = warp::path!("users")
+        .and(warp::post())
+        .and(with_db(db.clone()))
+        .and(warp::body::json::<CreateUserRequest>())
+        .and_then(handlers::create_user);
+
+    async fn strip_basic_auth(auth: String) -> Result<String, warp::Rejection> {
+        match auth.strip_prefix("Basic ") {
+            Some(token) => Ok(token.to_string()),
+            None => Err(warp::reject::custom(InvalidToken)),
+        }
+    }
+
+    fn extract_basic_token() -> impl Filter<Extract = (String,), Error = warp::Rejection> + Clone {
+        warp::any()
+            .and(warp::header("Authorization"))
+            .and_then(strip_basic_auth)
+    }
+
+    let authenticate_user = warp::path!("authenticate")
+        .and(warp::post())
+        .and(with_db(db))
+        .and(extract_basic_token())
+        .and_then(handlers::authenticate_user);
 
     warp::path("admin").and(
         count_visitors
@@ -72,6 +100,8 @@ pub fn make_admin_routes(
             .or(create_source)
             .or(list_sources)
             .or(list_sessions)
-            .or(admin_home_page),
+            .or(admin_home_page)
+            .or(create_user)
+            .or(authenticate_user),
     )
 }

@@ -11,6 +11,14 @@ impl reject::Reject for DatabaseError {}
 pub struct MissingSessionId;
 impl reject::Reject for MissingSessionId {}
 
+#[derive(Debug)]
+pub struct InvalidBase64;
+impl reject::Reject for InvalidBase64 {}
+
+#[derive(Debug)]
+pub struct InvalidToken;
+impl reject::Reject for InvalidToken {}
+
 #[derive(Serialize)]
 struct ErrorMessage {
     code: u16,
@@ -30,6 +38,12 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
     } else if let Some(MissingSessionId) = err.find() {
         code = StatusCode::BAD_REQUEST;
         message = "MISSING_SESSION_ID";
+    } else if let Some(InvalidBase64) = err.find() {
+        code = StatusCode::BAD_REQUEST;
+        message = "INVALID_BASE64";
+    } else if let Some(InvalidToken) = err.find() {
+        code = StatusCode::BAD_REQUEST;
+        message = "INVALID_TOKEN";
     } else if err
         .find::<warp::filters::body::BodyDeserializeError>()
         .is_some()

@@ -305,6 +305,52 @@ impl DB {
     }
 }
 
+pub struct NewUserData {
+    user_id: String,
+    secret_code: String,
+}
+
+impl NewUserData {
+    pub fn new(secret_code: &str) -> Self {
+        Self {
+            user_id: utils::generate_id(),
+            secret_code: secret_code.to_owned(),
+        }
+    }
+}
+
+#[derive(FromRow, Serialize)]
+pub struct CreatedUser {
+    user_id: String,
+    secret_code: String,
+}
+
+impl DB {
+    pub async fn create_user(&self, data: &NewUserData) -> Result<CreatedUser> {
+        let user = sqlx::query_as!(
+            CreatedUser,
+            r#"INSERT INTO users (user_id, secret_code) VALUES ($1, $2) RETURNING user_id, secret_code"#,
+            data.user_id,
+            data.secret_code
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(user)
+    }
+
+    pub async fn authenticate_user(&self, user_id: &str) -> Result<String> {
+        let rec = sqlx::query!(
+            r#"SELECT secret_code FROM users WHERE user_id = $1"#,
+            user_id,
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(rec.secret_code)
+    }
+}
+
 pub fn with_db(db: DB) -> impl Filter<Extract = (DB,), Error = Infallible> + Clone {
     warp::any().map(move || db.clone())
 }

@@ -8,7 +8,6 @@ use warp::Filter;
 use trantor::{admin, db::DB, errors, session};
 
 const REGEXES: &[u8; 205550] = include_bytes!("../data/ua-regexes.yml");
-const FRONTEND_URL: &str = "http://localhost:3000";
 const PORT: u16 = 3030;
 
 #[tokio::main]
@@ -32,11 +31,12 @@ async fn main() -> Result<()> {
     let session_routes = session::make_session_routes(db, ua_parser);
 
     let cors = warp::cors()
-        .allow_origin(FRONTEND_URL)
+        .allow_any_origin()
         .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
         .allow_headers(vec![
             "Origin",
             "Content-Type",
+            "Authorization",
             "Content-Length",
             "Access-Control-Allow-Origin",
         ])

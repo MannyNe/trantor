@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    db::{SingleSource, SingleVisitor, DB},
-    errors::DatabaseError,
+    db::{NewUserData, SingleSource, SingleVisitor, DB},
+    errors::{DatabaseError, InvalidBase64, InvalidToken},
 };
 
 #[derive(Serialize)]
@@ -123,4 +123,66 @@ pub async fn home_page(
         .unwrap();
 
     Ok(warp::reply::html(body))
+}
+
+#[derive(Deserialize)]
+pub struct CreateUserRequest {
+    secret_code: String,
+}
+
+pub async fn create_user(
+    db: DB,
+    request: CreateUserRequest,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Creating user");
+
+    let new_user = NewUserData::new(&request.secret_code);
+
+    let user = db.create_user(&new_user).await.map_err(|e| {
+        log::error!("Error creating user: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    Ok(warp::reply::with_status(
+        warp::reply::json(&user),
+        warp::http::StatusCode::CREATED,
+    ))
+}
+
+pub async fn authenticate_user(db: DB, token: String) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Authenticating user with token: {}", token);
+
+    let engine = base64::engine::general_purpose::URL_SAFE;
+
+    use base64::Engine;
+
+    let decoded = engine.decode(token).map_err(|e| {
+        log::error!("Error decoding token: {}", e);
+        warp::reject::custom(InvalidBase64)
+    })?;
+    let decode = String::from_utf8(decoded).map_err(|e| {
+        log::error!("Error decoding token to UTF-8: {}", e);
+        warp::reject::custom(InvalidBase64)
+    })?;
+
+    let (user_id, secret_code) = decode.split_once(':').ok_or_else(|| {
+        log::error!("Error splitting token into user ID and secret code");
+        warp::reject::custom(InvalidBase64)
+    })?;
+
+    let secret_code_from_db = db.authenticate_user(user_id).await.map_err(|e| {
+        log::error!("Error authenticating user: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    if secret_code_from_db == secret_code {
+        log::info!("User authenticated");
+        Ok(warp::reply::with_status(
+            warp::reply(),
+            warp::http::StatusCode::OK,
+        ))
+    } else {
+        log::info!("User not authenticated");
+        Err(warp::reject::custom(InvalidToken))
+    }
 }
