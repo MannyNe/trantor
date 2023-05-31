@@ -95,10 +95,14 @@ pub async fn list_sessions(db: DB) -> Result<impl warp::Reply, warp::Rejection> 
     Ok(warp::reply::json(&sessions))
 }
 
-pub async fn home_page(
-    db: DB,
-    template: liquid::Template,
-) -> Result<impl warp::Reply, warp::Rejection> {
+#[derive(Serialize)]
+struct TrackingStatsResponse {
+    visitors: i64,
+    sessions: i64,
+    sources: i64,
+}
+
+pub async fn tracking_stats(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Rendering home page");
 
     let visitors = db.count_visitors().await.map_err(|e| {
@@ -114,15 +118,11 @@ pub async fn home_page(
         warp::reject::custom(DatabaseError)
     })?;
 
-    let body = template
-        .render(&liquid::object!({
-            "visitors": visitors,
-            "sessions": sessions,
-            "sources": sources,
-        }))
-        .unwrap();
-
-    Ok(warp::reply::html(body))
+    Ok(warp::reply::json(&TrackingStatsResponse {
+        visitors,
+        sessions,
+        sources,
+    }))
 }
 
 #[derive(Deserialize)]
@@ -149,7 +149,14 @@ pub async fn create_user(
     ))
 }
 
-pub async fn authenticate_user(db: DB, token: String) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn strip_basic_auth(auth: String) -> Result<String, warp::Rejection> {
+    match auth.strip_prefix("Basic ") {
+        Some(token) => Ok(token.to_string()),
+        None => Err(warp::reject::custom(InvalidToken)),
+    }
+}
+
+pub async fn authenticate_middleware(db: DB, token: String) -> Result<(), warp::Rejection> {
     log::info!("Authenticating user with token: {}", token);
 
     let engine = base64::engine::general_purpose::URL_SAFE;
@@ -177,12 +184,16 @@ pub async fn authenticate_user(db: DB, token: String) -> Result<impl warp::Reply
 
     if secret_code_from_db == secret_code {
         log::info!("User authenticated");
-        Ok(warp::reply::with_status(
-            warp::reply(),
-            warp::http::StatusCode::OK,
-        ))
+        Ok(())
     } else {
         log::info!("User not authenticated");
         Err(warp::reject::custom(InvalidToken))
     }
+}
+
+pub async fn authenticate_user() -> Result<impl warp::Reply, warp::Rejection> {
+    Ok(warp::reply::with_status(
+        warp::reply(),
+        warp::http::StatusCode::OK,
+    ))
 }
