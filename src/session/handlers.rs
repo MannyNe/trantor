@@ -87,6 +87,7 @@ pub async fn session_start(
         title,
         pathname,
     }: SessionStart,
+    tracking_id: i32,
 ) -> Result<impl warp::Reply, reject::Rejection> {
     log::info!("session-start");
     log::info!("visitor_id: {}", visitor_id);
@@ -94,7 +95,7 @@ pub async fn session_start(
     log::info!("title: {}", title);
     log::info!("pathname: {}", pathname);
 
-    let new_session = NewSessionData::new(visitor_id, timestamp, title, pathname);
+    let new_session = NewSessionData::new(visitor_id, timestamp, title, pathname, tracking_id);
 
     db.create_session(&new_session).await.map_err(|e| {
         log::error!("Error creating session: {}", e);
@@ -154,11 +155,12 @@ pub async fn session_event(
     db: DB,
     session_id: String,
     event: Event,
+    tracking_id: i32,
 ) -> Result<impl warp::Reply, reject::Rejection> {
     log::info!("session-event");
     log::info!("session_id: {}", session_id);
 
-    db.create_event(&session_id, &event._type, &event.target)
+    db.create_event(&session_id, &event._type, &event.target, tracking_id)
         .await
         .map_err(|e| {
             log::error!("Error creating event: {}", e);
@@ -166,13 +168,4 @@ pub async fn session_event(
         })?;
 
     Ok(warp::reply())
-}
-
-pub async fn extract_tracking_id(db: DB, tracking_id: String) -> Result<i32, reject::Rejection> {
-    let tracking_id = db.id_from_tracking_id(&tracking_id).await.map_err(|e| {
-        log::error!("Error getting tracking id: {}", e);
-        reject::custom(DatabaseError)
-    })?;
-
-    Ok(tracking_id)
 }

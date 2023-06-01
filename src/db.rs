@@ -164,6 +164,7 @@ pub struct NewSessionData {
     start_timestamp: f64,
     title: String,
     pathname: String,
+    tracking_id: i32,
 }
 
 impl NewSessionData {
@@ -173,13 +174,20 @@ impl NewSessionData {
 }
 
 impl NewSessionData {
-    pub fn new(visitor_id: i32, start_timestamp: f64, title: String, pathname: String) -> Self {
+    pub fn new(
+        visitor_id: i32,
+        start_timestamp: f64,
+        title: String,
+        pathname: String,
+        tracking_id: i32,
+    ) -> Self {
         Self {
             session_id: utils::generate_id(),
             visitor_id,
             start_timestamp,
             title,
             pathname,
+            tracking_id,
         }
     }
 }
@@ -202,13 +210,14 @@ pub struct SingleSession {
 impl DB {
     pub async fn create_session(&self, data: &NewSessionData) -> Result<()> {
         sqlx::query!(
-            r#"INSERT INTO sessions (session_id, visitor_id, start_timestamp, title, pathname)
-            VALUES ($1, $2, TO_TIMESTAMP($3), $4, $5)"#,
+            r#"INSERT INTO sessions (session_id, visitor_id, start_timestamp, title, pathname, tracking_id)
+            VALUES ($1, $2, TO_TIMESTAMP($3), $4, $5, $6)"#,
             data.session_id,
             data.visitor_id,
             data.start_timestamp,
             data.title,
-            data.pathname
+            data.pathname,
+            data.tracking_id
         )
         .execute(&self.pool)
         .await?;
@@ -233,17 +242,19 @@ impl DB {
         session_id: &str,
         event_type: &str,
         event_target: &str,
+        tracking_id: i32,
     ) -> Result<()> {
         sqlx::query!(
             r#"
-            INSERT INTO events (session_id, type, target)
+            INSERT INTO events (session_id, type, target, tracking_id)
             VALUES (
-                (SELECT id FROM sessions WHERE session_id = $1), $2, $3
+                (SELECT id FROM sessions WHERE session_id = $1), $2, $3, $4
             )
             "#,
             session_id,
             event_type,
-            event_target
+            event_target,
+            tracking_id
         )
         .execute(&self.pool)
         .await?;
@@ -307,7 +318,7 @@ impl DB {
             FROM sources
                 LEFT JOIN visitors ON visitors.source_id = sources.id
             GROUP BY sources.name
-        "#
+            "#
         )
         .fetch_all(&self.pool)
         .await?;
@@ -358,15 +369,85 @@ impl DB {
         Ok(user)
     }
 
-    pub async fn authenticate_user(&self, user_id: &str) -> Result<String> {
+    pub async fn authenticate_user(&self, user_id: &str) -> Result<(i32, String)> {
         let rec = sqlx::query!(
-            r#"SELECT secret_code FROM users WHERE user_id = $1"#,
+            r#"SELECT id, secret_code FROM users WHERE user_id = $1"#,
             user_id,
         )
         .fetch_one(&self.pool)
         .await?;
 
-        Ok(rec.secret_code)
+        Ok((rec.id, rec.secret_code))
+    }
+}
+
+pub struct NewTrackingData {
+    tracking_id: String,
+    name: String,
+    owner_id: i32,
+}
+
+impl NewTrackingData {
+    pub fn new(name: String, owner_id: i32) -> Self {
+        Self {
+            tracking_id: utils::generate_id(),
+            name,
+            owner_id,
+        }
+    }
+}
+
+#[derive(FromRow, Serialize)]
+pub struct SingleTracking {
+    id: String,
+    name: String,
+    #[serde(with = "native_date_format")]
+    created_at: NaiveDateTime,
+    visitor_count: Option<i64>,
+    sessions_count: Option<i64>,
+    events_count: Option<i64>,
+    sources_count: Option<i64>,
+}
+
+impl DB {
+    pub async fn create_tracking(&self, data: &NewTrackingData) -> Result<()> {
+        sqlx::query!(
+            r#"INSERT INTO trackings (tracking_id, name, owner_id) VALUES ($1, $2, $3)"#,
+            data.tracking_id,
+            data.name,
+            data.owner_id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn list_trackings(&self, owner_id: i32) -> Result<Vec<SingleTracking>> {
+        let trackings = sqlx::query_as!(
+            SingleTracking,
+            r#"
+            SELECT trackings.tracking_id as id,
+                trackings.name as name,
+                trackings.created_at as created_at,
+                COUNT(DISTINCT visitors.id) as visitor_count,
+                COUNT(DISTINCT sessions.id) as sessions_count,
+                COUNT(DISTINCT events.id) as events_count,
+                COUNT(DISTINCT sources.id) as sources_count
+            FROM trackings
+                LEFT JOIN visitors ON visitors.tracking_id = trackings.id
+                LEFT JOIN sessions ON sessions.tracking_id = trackings.id
+                LEFT JOIN events ON events.tracking_id = trackings.id
+                LEFT JOIN sources ON sources.tracking_id = trackings.id
+            WHERE trackings.owner_id = $1 
+            GROUP BY trackings.tracking_id, trackings.name, trackings.created_at
+        "#,
+            owner_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(trackings)
     }
 }
 

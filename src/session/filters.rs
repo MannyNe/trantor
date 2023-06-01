@@ -3,13 +3,10 @@ use std::sync::Arc;
 use warp::Filter;
 
 use super::handlers::{self, Event, SessionEnd, SessionStart, SourceName};
-use crate::db::{with_db, DB};
-
-fn extract_tracking_id(db: DB) -> impl Filter<Extract = (i32,), Error = warp::Rejection> + Clone {
-    with_db(db)
-        .and(warp::header("x-tracking-id"))
-        .and_then(handlers::extract_tracking_id)
-}
+use crate::{
+    db::{with_db, DB},
+    middleware::extract_tracking_id_filter,
+};
 
 pub fn make_session_routes(
     db: DB,
@@ -28,7 +25,7 @@ pub fn make_session_routes(
         .and(warp::header::<String>("user-agent"))
         .and(warp::header::<String>("referer"))
         .and(ua_parser_filter)
-        .and(extract_tracking_id(db.clone()))
+        .and(extract_tracking_id_filter(db.clone()))
         .and_then(handlers::extract_visitor_id);
 
     let session_start = warp::path!("start")
@@ -36,6 +33,7 @@ pub fn make_session_routes(
         .and(with_db(db.clone()))
         .and(visitor_id)
         .and(warp::body::json::<SessionStart>())
+        .and(extract_tracking_id_filter(db.clone()))
         .and_then(handlers::session_start);
 
     let session_id =
@@ -53,6 +51,7 @@ pub fn make_session_routes(
         .and(with_db(db.clone()))
         .and(session_id)
         .and(warp::body::json::<Event>())
+        .and(extract_tracking_id_filter(db.clone()))
         .and_then(handlers::session_event);
 
     warp::path("session").and(session_start.or(session_end).or(session_event))

@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    db::{NewUserData, SingleSource, SingleVisitor, DB},
-    errors::{DatabaseError, InvalidBase64, InvalidToken},
+    db::{NewTrackingData, NewUserData, SingleSource, SingleTracking, SingleVisitor, DB},
+    errors::DatabaseError,
 };
 
 #[derive(Serialize)]
@@ -10,7 +10,7 @@ struct CountVisitorsResponse {
     count: i64,
 }
 
-pub async fn count_visitors(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn count_visitors(db: DB, _user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Counting visitors");
 
     let count = db.count_visitors().await.map_err(|e| {
@@ -26,7 +26,7 @@ struct ListVisitorsResponse {
     visitors: Vec<SingleVisitor>,
 }
 
-pub async fn list_visitors(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn list_visitors(db: DB, _user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Listing visitors");
 
     let visitors = db.list_visitors().await.map_err(|e| {
@@ -43,8 +43,9 @@ pub struct CreateSourceRequest {
 }
 
 pub async fn create_source(
-    request: CreateSourceRequest,
     db: DB,
+    request: CreateSourceRequest,
+    _user_id: i32,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Creating source: {}", request.name);
 
@@ -65,7 +66,7 @@ struct ListSourcesResponse {
     direct_visitors: i64,
 }
 
-pub async fn list_sources(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn list_sources(db: DB, _user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Listing sources");
 
     let sources = db.list_sources().await.map_err(|e| {
@@ -84,7 +85,7 @@ pub async fn list_sources(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
     }))
 }
 
-pub async fn list_sessions(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn list_sessions(db: DB, _user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Listing sessions");
 
     let sessions = db.list_sessions().await.map_err(|e| {
@@ -97,32 +98,18 @@ pub async fn list_sessions(db: DB) -> Result<impl warp::Reply, warp::Rejection> 
 
 #[derive(Serialize)]
 struct TrackingStatsResponse {
-    visitors: i64,
-    sessions: i64,
-    sources: i64,
+    trackings: Vec<SingleTracking>,
 }
 
-pub async fn tracking_stats(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Rendering home page");
+pub async fn list_trackings(db: DB, user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Listing trackings");
 
-    let visitors = db.count_visitors().await.map_err(|e| {
-        log::error!("Error counting visitors: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-    let sessions = db.count_sessions().await.map_err(|e| {
-        log::error!("Error counting sessions: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-    let sources = db.count_sources().await.map_err(|e| {
-        log::error!("Error listing sources: {}", e);
+    let trackings = db.list_trackings(user_id).await.map_err(|e| {
+        log::error!("Error listing trackings: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
 
-    Ok(warp::reply::json(&TrackingStatsResponse {
-        visitors,
-        sessions,
-        sources,
-    }))
+    Ok(warp::reply::json(&TrackingStatsResponse { trackings }))
 }
 
 #[derive(Deserialize)]
@@ -149,51 +136,27 @@ pub async fn create_user(
     ))
 }
 
-pub async fn strip_basic_auth(auth: String) -> Result<String, warp::Rejection> {
-    match auth.strip_prefix("Basic ") {
-        Some(token) => Ok(token.to_string()),
-        None => Err(warp::reject::custom(InvalidToken)),
-    }
+pub async fn authenticate_user() -> Result<impl warp::Reply, warp::Rejection> {
+    Ok(warp::reply())
 }
 
-pub async fn authenticate_middleware(db: DB, token: String) -> Result<(), warp::Rejection> {
-    log::info!("Authenticating user with token: {}", token);
+#[derive(Deserialize)]
+pub struct CreateTrackingRequest {
+    name: String,
+}
 
-    let engine = base64::engine::general_purpose::URL_SAFE;
+pub async fn create_tracking(
+    db: DB,
+    user_id: i32,
+    req: CreateTrackingRequest,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Creating tracking");
 
-    use base64::Engine;
-
-    let decoded = engine.decode(token).map_err(|e| {
-        log::error!("Error decoding token: {}", e);
-        warp::reject::custom(InvalidBase64)
-    })?;
-    let decode = String::from_utf8(decoded).map_err(|e| {
-        log::error!("Error decoding token to UTF-8: {}", e);
-        warp::reject::custom(InvalidBase64)
-    })?;
-
-    let (user_id, secret_code) = decode.split_once(':').ok_or_else(|| {
-        log::error!("Error splitting token into user ID and secret code");
-        warp::reject::custom(InvalidBase64)
-    })?;
-
-    let secret_code_from_db = db.authenticate_user(user_id).await.map_err(|e| {
-        log::error!("Error authenticating user: {}", e);
+    let new_tracking = NewTrackingData::new(req.name, user_id);
+    db.create_tracking(&new_tracking).await.map_err(|e| {
+        log::error!("Error creating tracking: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
 
-    if secret_code_from_db == secret_code {
-        log::info!("User authenticated");
-        Ok(())
-    } else {
-        log::info!("User not authenticated");
-        Err(warp::reject::custom(InvalidToken))
-    }
-}
-
-pub async fn authenticate_user() -> Result<impl warp::Reply, warp::Rejection> {
-    Ok(warp::reply::with_status(
-        warp::reply(),
-        warp::http::StatusCode::OK,
-    ))
+    Ok(warp::reply())
 }
