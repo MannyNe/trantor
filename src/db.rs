@@ -8,8 +8,6 @@ use warp::Filter;
 
 use crate::utils;
 
-pub const DEFAULT_SOURCE_ID: i32 = 1;
-
 #[derive(Clone)]
 pub struct DB {
     pool: PgPool,
@@ -40,6 +38,19 @@ impl DB {
 
         Ok(rec.id)
     }
+
+    pub async fn id_from_tracking_id(&self, tracking_id: &str) -> Result<i32> {
+        log::info!("Extracting tracking id: {:?}", tracking_id);
+
+        let rec = sqlx::query!(
+            r#"SELECT id FROM trackings WHERE tracking_id = $1"#,
+            tracking_id
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(rec.id)
+    }
 }
 
 pub struct NewVisitorData {
@@ -48,6 +59,7 @@ pub struct NewVisitorData {
     source_id: Option<i32>,
     user_agent: String,
     user_agent_parsed: serde_json::Value,
+    tracking_id: i32,
 }
 
 impl NewVisitorData {
@@ -56,6 +68,7 @@ impl NewVisitorData {
         referer: String,
         source_id: Option<i32>,
         ua_parser: Arc<uaparser::UserAgentParser>,
+        tracking_id: i32,
     ) -> Self {
         let user_agent_parsed = ua_parser.parse(&user_agent);
         let user_agent_parsed = serde_json::to_value(user_agent_parsed).unwrap();
@@ -66,6 +79,7 @@ impl NewVisitorData {
             referer,
             source_id,
             user_agent_parsed,
+            tracking_id,
         }
     }
 
@@ -89,13 +103,18 @@ pub struct SingleVisitor {
 impl DB {
     pub async fn create_visitor(&self, data: &NewVisitorData) -> Result<i32> {
         let rec = sqlx::query!(
-            r#"INSERT INTO visitors (visitor_id, user_agent, referer, source_id, user_agent_parsed) VALUES ($1, $2, $3, $4, $5) RETURNING id"#,
+            r#"INSERT INTO visitors (
+                visitor_id, user_agent, referer, source_id, user_agent_parsed, tracking_id
+            ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"#,
             data.visitor_id,
             data.user_agent,
             data.referer,
             data.source_id,
-            data.user_agent_parsed
-        ).fetch_one(&self.pool).await?;
+            data.user_agent_parsed,
+            data.tracking_id
+        )
+        .fetch_one(&self.pool)
+        .await?;
 
         Ok(rec.id)
     }

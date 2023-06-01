@@ -5,6 +5,12 @@ use warp::Filter;
 use super::handlers::{self, Event, SessionEnd, SessionStart, SourceName};
 use crate::db::{with_db, DB};
 
+fn extract_tracking_id(db: DB) -> impl Filter<Extract = (i32,), Error = warp::Rejection> + Clone {
+    with_db(db)
+        .and(warp::header("x-tracking-id"))
+        .and_then(handlers::extract_tracking_id)
+}
+
 pub fn make_session_routes(
     db: DB,
     ua_parser: uaparser::UserAgentParser,
@@ -22,6 +28,7 @@ pub fn make_session_routes(
         .and(warp::header::<String>("user-agent"))
         .and(warp::header::<String>("referer"))
         .and(ua_parser_filter)
+        .and(extract_tracking_id(db.clone()))
         .and_then(handlers::extract_visitor_id);
 
     let session_start = warp::path!("start")

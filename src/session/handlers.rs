@@ -39,6 +39,7 @@ pub async fn extract_visitor_id(
     user_agent: String,
     referer: String,
     ua_parser: Arc<uaparser::UserAgentParser>,
+    tracking_id: i32,
 ) -> Result<(i32, String), reject::Rejection> {
     match visitor_id {
         Some(visitor_id) => {
@@ -50,7 +51,8 @@ pub async fn extract_visitor_id(
             Ok((id, visitor_id))
         }
         None => {
-            let new_visitor = NewVisitorData::new(user_agent, referer, source_id, ua_parser);
+            let new_visitor =
+                NewVisitorData::new(user_agent, referer, source_id, ua_parser, tracking_id);
 
             let id = db.create_visitor(&new_visitor).await.map_err(|e| {
                 log::error!("Error creating visitor: {}", e);
@@ -164,4 +166,13 @@ pub async fn session_event(
         })?;
 
     Ok(warp::reply())
+}
+
+pub async fn extract_tracking_id(db: DB, tracking_id: String) -> Result<i32, reject::Rejection> {
+    let tracking_id = db.id_from_tracking_id(&tracking_id).await.map_err(|e| {
+        log::error!("Error getting tracking id: {}", e);
+        reject::custom(DatabaseError)
+    })?;
+
+    Ok(tracking_id)
 }

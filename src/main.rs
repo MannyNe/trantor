@@ -36,6 +36,7 @@ async fn main() -> Result<()> {
         .allow_headers(vec![
             "Origin",
             "Content-Type",
+            "x-tracking-id",
             "Authorization",
             "Content-Length",
             "Access-Control-Allow-Origin",
