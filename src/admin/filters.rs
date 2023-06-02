@@ -66,7 +66,7 @@ pub fn make_admin_routes(
 
     let create_user = warp::path!("users")
         .and(warp::post())
-        .and(with_db(db.clone()))
+        .and(with_db(db))
         .and(warp::body::json::<CreateUserRequest>())
         .and_then(handlers::create_user);
 

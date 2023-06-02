@@ -51,7 +51,7 @@ pub fn make_session_routes(
         .and(with_db(db.clone()))
         .and(session_id)
         .and(warp::body::json::<Event>())
-        .and(extract_tracking_id_filter(db.clone()))
+        .and(extract_tracking_id_filter(db))
         .and_then(handlers::session_event);
 
     warp::path("session").and(session_start.or(session_end).or(session_event))
