@@ -106,8 +106,15 @@ pub struct SingleVisitor {
 
 #[derive(FromRow, Serialize)]
 pub struct VisitorCountByWeekday {
-    #[serde(with = "big_decimal_to_weekday")]
+    #[serde(with = "big_decimal_to_u8")]
     weekday: Option<BigDecimal>,
+    count: Option<i64>,
+}
+
+#[derive(FromRow, Serialize)]
+pub struct VisitorCountByHour {
+    #[serde(with = "big_decimal_to_u8")]
+    hour: Option<BigDecimal>,
     count: Option<i64>,
 }
 
@@ -200,6 +207,27 @@ impl DB {
             FROM visitors
             WHERE tracking_id = $1
             GROUP BY weekday
+        "#,
+            tracking_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn count_visitors_by_hour(
+        &self,
+        tracking_id: i32,
+    ) -> Result<Vec<VisitorCountByHour>> {
+        let rec = sqlx::query_as!(
+            VisitorCountByHour,
+            r#"
+            SELECT COUNT(id) as count,
+                EXTRACT(HOUR FROM created_at) as hour
+            FROM visitors
+            WHERE tracking_id = $1
+            GROUP BY hour
         "#,
             tracking_id
         )
@@ -321,8 +349,15 @@ pub struct SingleSession {
 
 #[derive(FromRow, Serialize)]
 pub struct SessionCountByWeekday {
-    #[serde(with = "big_decimal_to_weekday")]
+    #[serde(with = "big_decimal_to_u8")]
     weekday: Option<BigDecimal>,
+    count: Option<i64>,
+}
+
+#[derive(FromRow, Serialize)]
+pub struct SessionCountByHour {
+    #[serde(with = "big_decimal_to_u8")]
+    hour: Option<BigDecimal>,
     count: Option<i64>,
 }
 
@@ -421,6 +456,27 @@ impl DB {
             FROM sessions
             WHERE tracking_id = $1
             GROUP BY weekday
+        "#,
+            tracking_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn count_sessions_by_hour(
+        &self,
+        tracking_id: i32,
+    ) -> Result<Vec<SessionCountByHour>> {
+        let rec = sqlx::query_as!(
+            SessionCountByHour,
+            r#"
+            SELECT COUNT(id) as count,
+                EXTRACT(HOUR FROM start_timestamp) as hour
+            FROM sessions
+            WHERE tracking_id = $1
+            GROUP BY hour
         "#,
             tracking_id
         )
@@ -663,7 +719,7 @@ mod optional_pg_interval_format {
     }
 }
 
-mod big_decimal_to_weekday {
+mod big_decimal_to_u8 {
     use num_traits::cast::ToPrimitive;
     use serde::{self, Serializer};
     use sqlx::types::BigDecimal;
@@ -672,7 +728,6 @@ mod big_decimal_to_weekday {
     where
         S: Serializer,
     {
-        // this is safe because the value is always between 0 and 6
         match decimal {
             Some(decimal) => match decimal.to_u8() {
                 Some(value) => serializer.serialize_u8(value),

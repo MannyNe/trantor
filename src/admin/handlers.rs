@@ -2,9 +2,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     db::{
-        NewTrackingData, NewUserData, SessionCountByWeekday, SingleSource, SingleTracking,
-        SingleVisitor, VisitorCountByBrowser, VisitorCountByDevice, VisitorCountByOs,
-        VisitorCountByWeekday, DB,
+        NewTrackingData, NewUserData, SessionCountByHour, SessionCountByWeekday, SingleSource,
+        SingleTracking, SingleVisitor, VisitorCountByBrowser, VisitorCountByDevice,
+        VisitorCountByHour, VisitorCountByOs, VisitorCountByWeekday, DB,
     },
     errors::DatabaseError,
 };
@@ -154,6 +154,8 @@ pub struct TrackingResponse {
     name: String,
     session_count_by_weekday: Vec<SessionCountByWeekday>,
     visitor_count_by_weekday: Vec<VisitorCountByWeekday>,
+    session_count_by_hour: Vec<SessionCountByHour>,
+    visitor_count_by_hour: Vec<VisitorCountByHour>,
     visitor_count_by_os: Vec<VisitorCountByOs>,
     visitor_count_by_browser: Vec<VisitorCountByBrowser>,
     visitor_count_by_device: Vec<VisitorCountByDevice>,
@@ -199,6 +201,16 @@ pub async fn get_tracking(
                 log::error!("Error counting visitors: {}", e);
                 warp::reject::custom(DatabaseError)
             })?;
+
+    let session_count_by_hour = db.count_sessions_by_hour(tracking_id).await.map_err(|e| {
+        log::error!("Error counting sessions by hour: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+    let visitor_count_by_hour = db.count_visitors_by_hour(tracking_id).await.map_err(|e| {
+        log::error!("Error counting visitors by hour: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
     let visitor_count_by_os = db.count_visitors_by_os(tracking_id).await.map_err(|e| {
         log::error!("Error counting visitors by os: {}", e);
         warp::reject::custom(DatabaseError)
@@ -222,6 +234,8 @@ pub async fn get_tracking(
         name: tracking_name,
         session_count_by_weekday,
         visitor_count_by_weekday,
+        session_count_by_hour,
+        visitor_count_by_hour,
         visitor_count_by_os,
         visitor_count_by_browser,
         visitor_count_by_device,

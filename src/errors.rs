@@ -68,6 +68,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
         code: code.as_u16(),
         message: message.into(),
     });
+    let json = warp::reply::with_header(json, "Access-Control-Allow-Origin", "*");
 
     Ok(warp::reply::with_status(json, code))
 }
