@@ -104,6 +104,13 @@ pub struct SingleVisitor {
     source_name: Option<String>,
 }
 
+#[derive(FromRow, Serialize)]
+pub struct VisitorCountByWeekday {
+    #[serde(with = "big_decimal_to_weekday")]
+    weekday: Option<BigDecimal>,
+    count: Option<i64>,
+}
+
 impl DB {
     pub async fn create_visitor(&self, data: &NewVisitorData) -> Result<i32> {
         let rec = sqlx::query!(
@@ -159,6 +166,27 @@ impl DB {
                 .await?;
 
         rec.count.ok_or_else(|| eyre::eyre!("No count found"))
+    }
+
+    pub async fn count_visitors_by_weekday(
+        &self,
+        tracking_id: i32,
+    ) -> Result<Vec<VisitorCountByWeekday>> {
+        let rec = sqlx::query_as!(
+            VisitorCountByWeekday,
+            r#"
+            SELECT COUNT(id) as count,
+                EXTRACT(DOW FROM created_at) as weekday
+            FROM visitors
+            WHERE tracking_id = $1
+            GROUP BY weekday
+        "#,
+            tracking_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
     }
 }
 
@@ -491,6 +519,17 @@ impl DB {
         .await?;
 
         Ok(rec.owner_id)
+    }
+
+    pub async fn tracking_name(&self, tracking_id: &str) -> Result<String> {
+        let rec = sqlx::query!(
+            r#"SELECT name FROM trackings WHERE tracking_id = $1"#,
+            tracking_id
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(rec.name)
     }
 }
 

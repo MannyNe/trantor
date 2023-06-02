@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     db::{
         NewTrackingData, NewUserData, SessionCountByWeekday, SingleSource, SingleTracking,
-        SingleVisitor, DB,
+        SingleVisitor, VisitorCountByWeekday, DB,
     },
     errors::DatabaseError,
 };
@@ -166,7 +166,9 @@ pub async fn list_trackings(db: DB, user_id: i32) -> Result<impl warp::Reply, wa
 
 #[derive(Serialize)]
 pub struct TrackingResponse {
+    name: String,
     session_count_by_weekday: Vec<SessionCountByWeekday>,
+    visitor_count_by_weekday: Vec<VisitorCountByWeekday>,
 }
 
 pub async fn get_tracking(
@@ -178,6 +180,10 @@ pub async fn get_tracking(
 
     let owner_id = db.tracking_owner(&tracking_id).await.map_err(|e| {
         log::error!("Error getting owner id: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+    let tracking_name = db.tracking_name(&tracking_id).await.map_err(|e| {
+        log::error!("Error getting tracking name: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
 
@@ -198,8 +204,17 @@ pub async fn get_tracking(
                 log::error!("Error counting sessions: {}", e);
                 warp::reject::custom(DatabaseError)
             })?;
+    let visitor_count_by_weekday =
+        db.count_visitors_by_weekday(tracking_id)
+            .await
+            .map_err(|e| {
+                log::error!("Error counting visitors: {}", e);
+                warp::reject::custom(DatabaseError)
+            })?;
 
     Ok(warp::reply::json(&TrackingResponse {
+        name: tracking_name,
         session_count_by_weekday,
+        visitor_count_by_weekday,
     }))
 }
