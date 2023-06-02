@@ -20,12 +20,6 @@ pub fn make_admin_routes(
         .and(authenticate_filter_extract_user_id(db.clone()))
         .and_then(handlers::count_visitors);
 
-    let list_visitors = warp::path!("visitors")
-        .and(warp::get())
-        .and(with_db(db.clone()))
-        .and(authenticate_filter_extract_user_id(db.clone()))
-        .and_then(handlers::list_visitors);
-
     let create_source = warp::path!("sources")
         .and(warp::post())
         .and(with_db(db.clone()))
@@ -63,6 +57,12 @@ pub fn make_admin_routes(
         .and(with_db(db.clone()))
         .and(authenticate_filter_extract_user_id(db.clone()))
         .and_then(handlers::get_tracking);
+
+    let list_visitors = warp::path!("trackings" / String / "visitors")
+        .and(warp::get())
+        .and(with_db(db.clone()))
+        .and(authenticate_filter_extract_user_id(db.clone()))
+        .and_then(handlers::list_visitors);
 
     let create_user = warp::path!("users")
         .and(warp::post())

@@ -111,6 +111,24 @@ pub struct VisitorCountByWeekday {
     count: Option<i64>,
 }
 
+#[derive(FromRow, Serialize)]
+pub struct VisitorCountByOs {
+    os: Option<String>,
+    count: Option<i64>,
+}
+
+#[derive(FromRow, Serialize)]
+pub struct VisitorCountByDevice {
+    device: Option<String>,
+    count: Option<i64>,
+}
+
+#[derive(FromRow, Serialize)]
+pub struct VisitorCountByBrowser {
+    browser: Option<String>,
+    count: Option<i64>,
+}
+
 impl DB {
     pub async fn create_visitor(&self, data: &NewVisitorData) -> Result<i32> {
         let rec = sqlx::query!(
@@ -138,7 +156,7 @@ impl DB {
         rec.count.ok_or_else(|| eyre::eyre!("No count found"))
     }
 
-    pub async fn list_visitors(&self) -> Result<Vec<SingleVisitor>> {
+    pub async fn list_visitors(&self, tracking_id: i32) -> Result<Vec<SingleVisitor>> {
         let visitors = sqlx::query_as!(
             SingleVisitor,
             r#"
@@ -151,7 +169,9 @@ impl DB {
                 sources.name as "source_name?"
             FROM visitors
                 LEFT JOIN sources ON visitors.source_id = sources.id
-        "#
+            WHERE visitors.tracking_id = $1
+        "#,
+            tracking_id
         )
         .fetch_all(&self.pool)
         .await?;
@@ -180,6 +200,66 @@ impl DB {
             FROM visitors
             WHERE tracking_id = $1
             GROUP BY weekday
+        "#,
+            tracking_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn count_visitors_by_os(&self, tracking_id: i32) -> Result<Vec<VisitorCountByOs>> {
+        let rec = sqlx::query_as!(
+            VisitorCountByOs,
+            r#"
+            SELECT COUNT(id) as count,
+                user_agent_parsed->'os'->>'family' AS os
+            FROM visitors
+            WHERE tracking_id = $1
+            GROUP BY os
+        "#,
+            tracking_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn count_visitors_by_device(
+        &self,
+        tracking_id: i32,
+    ) -> Result<Vec<VisitorCountByDevice>> {
+        let rec = sqlx::query_as!(
+            VisitorCountByDevice,
+            r#"
+            SELECT COUNT(id) as count,
+                user_agent_parsed->'device'->>'family' AS device
+            FROM visitors
+            WHERE tracking_id = $1
+            GROUP BY device
+        "#,
+            tracking_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn count_visitors_by_browser(
+        &self,
+        tracking_id: i32,
+    ) -> Result<Vec<VisitorCountByBrowser>> {
+        let rec = sqlx::query_as!(
+            VisitorCountByBrowser,
+            r#"
+            SELECT COUNT(id) as count,
+                user_agent_parsed->'user_agent'->>'family' AS browser
+            FROM visitors
+            WHERE tracking_id = $1
+            GROUP BY browser
         "#,
             tracking_id
         )

@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     db::{
         NewTrackingData, NewUserData, SessionCountByWeekday, SingleSource, SingleTracking,
-        SingleVisitor, VisitorCountByWeekday, DB,
+        SingleVisitor, VisitorCountByBrowser, VisitorCountByDevice, VisitorCountByOs,
+        VisitorCountByWeekday, DB,
     },
     errors::DatabaseError,
 };
@@ -22,22 +23,6 @@ pub async fn count_visitors(db: DB, _user_id: i32) -> Result<impl warp::Reply, w
     })?;
 
     Ok(warp::reply::json(&CountVisitorsResponse { count }))
-}
-
-#[derive(Serialize)]
-struct ListVisitorsResponse {
-    visitors: Vec<SingleVisitor>,
-}
-
-pub async fn list_visitors(db: DB, _user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Listing visitors");
-
-    let visitors = db.list_visitors().await.map_err(|e| {
-        log::error!("Error listing visitors: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-
-    Ok(warp::reply::json(&ListVisitorsResponse { visitors }))
 }
 
 #[derive(Deserialize)]
@@ -169,6 +154,9 @@ pub struct TrackingResponse {
     name: String,
     session_count_by_weekday: Vec<SessionCountByWeekday>,
     visitor_count_by_weekday: Vec<VisitorCountByWeekday>,
+    visitor_count_by_os: Vec<VisitorCountByOs>,
+    visitor_count_by_browser: Vec<VisitorCountByBrowser>,
+    visitor_count_by_device: Vec<VisitorCountByDevice>,
 }
 
 pub async fn get_tracking(
@@ -211,10 +199,66 @@ pub async fn get_tracking(
                 log::error!("Error counting visitors: {}", e);
                 warp::reject::custom(DatabaseError)
             })?;
+    let visitor_count_by_os = db.count_visitors_by_os(tracking_id).await.map_err(|e| {
+        log::error!("Error counting visitors by os: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+    let visitor_count_by_browser =
+        db.count_visitors_by_browser(tracking_id)
+            .await
+            .map_err(|e| {
+                log::error!("Error counting visitors by browser: {}", e);
+                warp::reject::custom(DatabaseError)
+            })?;
+    let visitor_count_by_device = db
+        .count_visitors_by_device(tracking_id)
+        .await
+        .map_err(|e| {
+            log::error!("Error counting visitors by device: {}", e);
+            warp::reject::custom(DatabaseError)
+        })?;
 
     Ok(warp::reply::json(&TrackingResponse {
         name: tracking_name,
         session_count_by_weekday,
         visitor_count_by_weekday,
+        visitor_count_by_os,
+        visitor_count_by_browser,
+        visitor_count_by_device,
     }))
+}
+
+#[derive(Serialize)]
+struct ListVisitorsResponse {
+    visitors: Vec<SingleVisitor>,
+}
+
+pub async fn list_visitors(
+    tracking_id: String,
+    db: DB,
+    user_id: i32,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Listing visitors");
+
+    let owner_id = db.tracking_owner(&tracking_id).await.map_err(|e| {
+        log::error!("Error getting owner id: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    let tracking_id = db.id_from_tracking_id(&tracking_id).await.map_err(|e| {
+        log::error!("Error getting tracking id: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    if owner_id != user_id {
+        log::error!("User {} tried to access tracking {}", user_id, tracking_id);
+        return Err(warp::reject::custom(DatabaseError));
+    }
+
+    let visitors = db.list_visitors(tracking_id).await.map_err(|e| {
+        log::error!("Error listing visitors: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    Ok(warp::reply::json(&ListVisitorsResponse { visitors }))
 }
