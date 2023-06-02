@@ -2,7 +2,11 @@ use std::{convert::Infallible, sync::Arc};
 
 use color_eyre::{eyre, Result};
 use serde::Serialize;
-use sqlx::{postgres::types::PgInterval, types::chrono::NaiveDateTime, FromRow, PgPool};
+use sqlx::{
+    postgres::types::PgInterval,
+    types::{chrono::NaiveDateTime, BigDecimal},
+    FromRow, PgPool,
+};
 use uaparser::Parser;
 use warp::Filter;
 
@@ -207,6 +211,13 @@ pub struct SingleSession {
     end_latency: Option<PgInterval>,
 }
 
+#[derive(FromRow, Serialize)]
+pub struct SessionCountByWeekday {
+    #[serde(with = "big_decimal_to_weekday")]
+    weekday: Option<BigDecimal>,
+    count: Option<i64>,
+}
+
 impl DB {
     pub async fn create_session(&self, data: &NewSessionData) -> Result<()> {
         sqlx::query!(
@@ -288,6 +299,27 @@ impl DB {
             .await?;
 
         rec.count.ok_or_else(|| eyre::eyre!("No count found"))
+    }
+
+    pub async fn count_sessions_by_weekday(
+        &self,
+        tracking_id: i32,
+    ) -> Result<Vec<SessionCountByWeekday>> {
+        let rec = sqlx::query_as!(
+            SessionCountByWeekday,
+            r#"
+            SELECT COUNT(id) as count,
+                EXTRACT(DOW FROM start_timestamp) as weekday
+            FROM sessions
+            WHERE tracking_id = $1
+            GROUP BY weekday
+        "#,
+            tracking_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
     }
 }
 
@@ -449,6 +481,17 @@ impl DB {
 
         Ok(trackings)
     }
+
+    pub async fn tracking_owner(&self, tracking_id: &str) -> Result<i32> {
+        let rec = sqlx::query!(
+            r#"SELECT owner_id FROM trackings WHERE tracking_id = $1"#,
+            tracking_id
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(rec.owner_id)
+    }
 }
 
 pub fn with_db(db: DB) -> impl Filter<Extract = (DB,), Error = Infallible> + Clone {
@@ -459,13 +502,6 @@ mod native_date_format {
     use serde::{self, Serializer};
     use sqlx::types::chrono::NaiveDateTime;
 
-    // The signature of a serialize_with function must follow the pattern:
-    //
-    //    fn serialize<S>(&T, S) -> Result<S::Ok, S::Error>
-    //    where
-    //        S: Serializer
-    //
-    // although it may also be generic over the input types T.
     pub fn serialize<S>(date: &NaiveDateTime, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -478,13 +514,6 @@ mod optional_native_date_format {
     use serde::{self, Serializer};
     use sqlx::types::chrono::NaiveDateTime;
 
-    // The signature of a serialize_with function must follow the pattern:
-    //
-    //    fn serialize<S>(&T, S) -> Result<S::Ok, S::Error>
-    //    where
-    //        S: Serializer
-    //
-    // although it may also be generic over the input types T.
     pub fn serialize<S>(date: &Option<NaiveDateTime>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -500,13 +529,6 @@ mod optional_pg_interval_format {
     use serde::{self, Serializer};
     use sqlx::postgres::types::PgInterval;
 
-    // The signature of a serialize_with function must follow the pattern:
-    //
-    //    fn serialize<S>(&T, S) -> Result<S::Ok, S::Error>
-    //    where
-    //        S: Serializer
-    //
-    // although it may also be generic over the input types T.
     pub fn serialize<S>(interval: &Option<PgInterval>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -517,6 +539,26 @@ mod optional_pg_interval_format {
                 "days": interval.days,
                 "microseconds": interval.microseconds,
             })),
+            None => serializer.serialize_none(),
+        }
+    }
+}
+
+mod big_decimal_to_weekday {
+    use num_traits::cast::ToPrimitive;
+    use serde::{self, Serializer};
+    use sqlx::types::BigDecimal;
+
+    pub fn serialize<S>(decimal: &Option<BigDecimal>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // this is safe because the value is always between 0 and 6
+        match decimal {
+            Some(decimal) => match decimal.to_u8() {
+                Some(value) => serializer.serialize_u8(value),
+                None => serializer.serialize_none(),
+            },
             None => serializer.serialize_none(),
         }
     }

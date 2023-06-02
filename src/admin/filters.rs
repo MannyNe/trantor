@@ -58,6 +58,12 @@ pub fn make_admin_routes(
         .and(warp::body::json::<CreateTrackingRequest>())
         .and_then(handlers::create_tracking);
 
+    let get_tracking = warp::path!("trackings" / String)
+        .and(warp::get())
+        .and(with_db(db.clone()))
+        .and(authenticate_filter_extract_user_id(db.clone()))
+        .and_then(handlers::get_tracking);
+
     let create_user = warp::path!("users")
         .and(warp::post())
         .and(with_db(db.clone()))
@@ -72,6 +78,7 @@ pub fn make_admin_routes(
             .or(list_sessions)
             .or(list_trackings)
             .or(create_tracking)
+            .or(get_tracking)
             .or(create_user)
             .or(authenticate_user),
     )

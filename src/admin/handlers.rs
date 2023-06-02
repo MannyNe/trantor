@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    db::{NewTrackingData, NewUserData, SingleSource, SingleTracking, SingleVisitor, DB},
+    db::{
+        NewTrackingData, NewUserData, SessionCountByWeekday, SingleSource, SingleTracking,
+        SingleVisitor, DB,
+    },
     errors::DatabaseError,
 };
 
@@ -96,22 +99,6 @@ pub async fn list_sessions(db: DB, _user_id: i32) -> Result<impl warp::Reply, wa
     Ok(warp::reply::json(&sessions))
 }
 
-#[derive(Serialize)]
-struct TrackingStatsResponse {
-    trackings: Vec<SingleTracking>,
-}
-
-pub async fn list_trackings(db: DB, user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Listing trackings");
-
-    let trackings = db.list_trackings(user_id).await.map_err(|e| {
-        log::error!("Error listing trackings: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-
-    Ok(warp::reply::json(&TrackingStatsResponse { trackings }))
-}
-
 #[derive(Deserialize)]
 pub struct CreateUserRequest {
     secret_code: String,
@@ -159,4 +146,60 @@ pub async fn create_tracking(
     })?;
 
     Ok(warp::reply())
+}
+
+#[derive(Serialize)]
+struct TrackingStatsResponse {
+    trackings: Vec<SingleTracking>,
+}
+
+pub async fn list_trackings(db: DB, user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Listing trackings");
+
+    let trackings = db.list_trackings(user_id).await.map_err(|e| {
+        log::error!("Error listing trackings: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    Ok(warp::reply::json(&TrackingStatsResponse { trackings }))
+}
+
+#[derive(Serialize)]
+pub struct TrackingResponse {
+    session_count_by_weekday: Vec<SessionCountByWeekday>,
+}
+
+pub async fn get_tracking(
+    tracking_id: String,
+    db: DB,
+    user_id: i32,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Getting tracking");
+
+    let owner_id = db.tracking_owner(&tracking_id).await.map_err(|e| {
+        log::error!("Error getting owner id: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    let tracking_id = db.id_from_tracking_id(&tracking_id).await.map_err(|e| {
+        log::error!("Error getting tracking id: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    if owner_id != user_id {
+        log::error!("User {} tried to access tracking {}", user_id, tracking_id);
+        return Err(warp::reject::custom(DatabaseError));
+    }
+
+    let session_count_by_weekday =
+        db.count_sessions_by_weekday(tracking_id)
+            .await
+            .map_err(|e| {
+                log::error!("Error counting sessions: {}", e);
+                warp::reject::custom(DatabaseError)
+            })?;
+
+    Ok(warp::reply::json(&TrackingResponse {
+        session_count_by_weekday,
+    }))
 }
