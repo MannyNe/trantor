@@ -1,6 +1,5 @@
 use std::{convert::Infallible, sync::Arc};
 
-use color_eyre::{eyre, Result};
 use serde::Serialize;
 use sqlx::{
     postgres::types::PgInterval,
@@ -11,6 +10,8 @@ use uaparser::Parser;
 use warp::Filter;
 
 use crate::utils;
+
+type Result<T> = std::result::Result<T, sqlx::Error>;
 
 #[derive(Clone)]
 pub struct DB {
@@ -155,12 +156,12 @@ impl DB {
         Ok(rec.id)
     }
 
-    pub async fn count_visitors(&self) -> Result<i64> {
+    pub async fn count_visitors(&self) -> Result<Option<i64>> {
         let rec = sqlx::query!(r#"SELECT COUNT(id) as count FROM visitors"#)
             .fetch_one(&self.pool)
             .await?;
 
-        rec.count.ok_or_else(|| eyre::eyre!("No count found"))
+        Ok(rec.count)
     }
 
     pub async fn list_visitors(&self, tracking_id: i32) -> Result<Vec<SingleVisitor>> {
@@ -186,13 +187,13 @@ impl DB {
         Ok(visitors)
     }
 
-    pub async fn count_visitors_without_source(&self) -> Result<i64> {
+    pub async fn count_visitors_without_source(&self) -> Result<Option<i64>> {
         let rec =
             sqlx::query!(r#"SELECT COUNT(id) as count FROM visitors WHERE source_id IS NULL"#)
                 .fetch_one(&self.pool)
                 .await?;
 
-        rec.count.ok_or_else(|| eyre::eyre!("No count found"))
+        Ok(rec.count)
     }
 
     pub async fn count_visitors_by_weekday(
@@ -436,12 +437,12 @@ impl DB {
         Ok(sessions)
     }
 
-    pub async fn count_sessions(&self) -> Result<i64> {
+    pub async fn count_sessions(&self) -> Result<Option<i64>> {
         let rec = sqlx::query!(r#"SELECT COUNT(id) as count FROM sessions"#)
             .fetch_one(&self.pool)
             .await?;
 
-        rec.count.ok_or_else(|| eyre::eyre!("No count found"))
+        Ok(rec.count)
     }
 
     pub async fn count_sessions_by_weekday(
@@ -522,12 +523,12 @@ impl DB {
         Ok(sources)
     }
 
-    pub async fn count_sources(&self) -> Result<i64> {
+    pub async fn count_sources(&self) -> Result<Option<i64>> {
         let rec = sqlx::query!(r#"SELECT COUNT(id) as count FROM sources"#)
             .fetch_one(&self.pool)
             .await?;
 
-        rec.count.ok_or_else(|| eyre::eyre!("No count found"))
+        Ok(rec.count)
     }
 }
 

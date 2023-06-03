@@ -11,7 +11,7 @@ use crate::{
 
 #[derive(Serialize)]
 struct CountVisitorsResponse {
-    count: i64,
+    count: Option<i64>,
 }
 
 pub async fn count_visitors(db: DB, _user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
@@ -51,7 +51,7 @@ pub async fn create_source(
 #[derive(Serialize)]
 struct ListSourcesResponse {
     sources: Vec<SingleSource>,
-    direct_visitors: i64,
+    direct_visitors: Option<i64>,
 }
 
 pub async fn list_sources(db: DB, _user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {

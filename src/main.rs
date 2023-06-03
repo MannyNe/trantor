@@ -45,8 +45,8 @@ async fn main() -> Result<()> {
 
     let routes = session_routes
         .or(admin_routes)
-        .with(cors)
-        .recover(errors::handle_rejection);
+        .recover(errors::handle_rejection)
+        .with(cors);
 
     warp::serve(routes).run(([127, 0, 0, 1], PORT)).await;
 
