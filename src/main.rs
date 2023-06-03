@@ -1,6 +1,5 @@
 use std::env;
 
-use color_eyre::Result;
 use sqlx::PgPool;
 use uaparser::UserAgentParser;
 use warp::Filter;
@@ -11,8 +10,7 @@ const REGEXES: &[u8; 205550] = include_bytes!("../data/ua-regexes.yml");
 const PORT: u16 = 3030;
 
 #[tokio::main]
-async fn main() -> Result<()> {
-    color_eyre::install()?;
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if env::var_os("RUST_LOG").is_none() {
         env::set_var("RUST_LOG", "info");
     }
