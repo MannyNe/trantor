@@ -2,7 +2,6 @@ import type { PageLoad } from './$types';
 import { env } from '$env/dynamic/public';
 import { getAuthToken } from '$lib/utils';
 
-export const prerender = true;
 export const ssr = false;
 
 type WeekdayCount = {

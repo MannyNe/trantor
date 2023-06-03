@@ -7,7 +7,6 @@ use warp::Filter;
 use trantor::{admin, db::DB, errors, session};
 
 const REGEXES: &[u8; 205550] = include_bytes!("../data/ua-regexes.yml");
-const PORT: u16 = 3030;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -41,12 +40,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ])
         .allow_credentials(true);
 
-    let routes = session_routes
-        .or(admin_routes)
+    let routes = admin_routes
+        .or(session_routes)
+        .or(warp::fs::dir("client/build"))
+        .or(warp::path("login").and(warp::fs::file("client/build/index.html")))
+        .or(warp::path!("trackings" / String)
+            .map(|_| ())
+            .untuple_one()
+            .and(warp::fs::file("client/build/index.html")))
         .recover(errors::handle_rejection)
         .with(cors);
 
-    warp::serve(routes).run(([127, 0, 0, 1], PORT)).await;
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 
     Ok(())
 }

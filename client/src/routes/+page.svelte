@@ -2,7 +2,7 @@
 	import { authState } from '$lib/auth';
 	import { createTracking } from '$lib/api';
 	import { invalidateAll } from '$app/navigation';
-	import { formatRelative, subDays } from 'date-fns';
+	import { formatRelative } from 'date-fns';
 
 	import type { PageData } from './$types';
 	export let data: PageData;
