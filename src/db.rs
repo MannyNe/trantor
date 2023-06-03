@@ -187,18 +187,6 @@ impl DB {
         Ok(visitors)
     }
 
-    pub async fn count_visitors_without_source(&self, tracking_id: i32) -> Result<Option<i64>> {
-        let rec = sqlx::query!(
-            r#"SELECT COUNT(id) as count FROM visitors
-            WHERE source_id IS NULL AND tracking_id = $1"#,
-            tracking_id
-        )
-        .fetch_one(&self.pool)
-        .await?;
-
-        Ok(rec.count)
-    }
-
     pub async fn count_visitors_by_weekday(
         &self,
         tracking_id: i32,
@@ -495,13 +483,15 @@ impl DB {
 pub struct SingleSource {
     name: String,
     visitor_count: i64,
+    session_count: i64,
 }
 
 impl DB {
-    pub async fn create_source(&self, name: &str) -> Result<()> {
+    pub async fn create_source(&self, name: &str, tracking_id: i32) -> Result<()> {
         let _ = sqlx::query!(
-            r#"INSERT INTO sources (name) VALUES ($1) RETURNING id"#,
-            name
+            r#"INSERT INTO sources (name, tracking_id) VALUES ($1, $2) RETURNING id"#,
+            name,
+            tracking_id
         )
         .fetch_one(&self.pool)
         .await?;
@@ -513,12 +503,14 @@ impl DB {
         let sources = sqlx::query_as!(
             SingleSource,
             r#"
-            SELECT sources.name as "name!",
-                COUNT(visitors.id) as "visitor_count!"
-            FROM sources
+            SELECT sources.name as name,
+                COUNT(DISTINCT visitors.id) as "visitor_count!",
+                COUNT(DISTINCT sessions.id) as "session_count!"
+            FROM sources 
                 LEFT JOIN visitors ON visitors.source_id = sources.id
-            WHERE visitors.tracking_id = $1
-            GROUP BY sources.name
+                LEFT JOIN sessions ON sessions.visitor_id = visitors.id
+            WHERE sources.tracking_id = $1
+            GROUP BY sources.name, sources.created_at
             "#,
             tracking_id
         )
@@ -526,6 +518,27 @@ impl DB {
         .await?;
 
         Ok(sources)
+    }
+
+    pub async fn visitors_and_sessions_no_source(&self, tracking_id: i32) -> Result<SingleSource> {
+        let rec = sqlx::query!(
+            r#"
+            SELECT COUNT(DISTINCT visitors.id) as "visitor_count!",
+                COUNT(DISTINCT sessions.id) as "sessions_count!"
+            FROM visitors 
+                LEFT JOIN sessions ON sessions.visitor_id = visitors.id
+            WHERE visitors.source_id IS NULL AND visitors.tracking_id = $1
+            "#,
+            tracking_id
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(SingleSource {
+            name: "direct".to_owned(),
+            visitor_count: rec.visitor_count,
+            session_count: rec.sessions_count,
+        })
     }
 
     pub async fn count_sources(&self) -> Result<Option<i64>> {

@@ -32,25 +32,22 @@ pub struct CreateSourceRequest {
 
 pub async fn create_source(
     db: DB,
+    tracking_id: i32,
     request: CreateSourceRequest,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Creating source: {}", request.name);
 
-    db.create_source(&request.name).await.map_err(|e| {
-        log::error!("Error creating source: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
+    db.create_source(&request.name, tracking_id)
+        .await
+        .map_err(|e| {
+            log::error!("Error creating source: {}", e);
+            warp::reject::custom(DatabaseError)
+        })?;
 
     Ok(warp::reply::with_status(
         warp::reply(),
         warp::http::StatusCode::CREATED,
     ))
-}
-
-#[derive(Serialize)]
-struct ListSourcesResponse {
-    sources: Vec<SingleSource>,
-    direct_visitors: Option<i64>,
 }
 
 pub async fn list_sessions(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
@@ -219,24 +216,28 @@ pub async fn list_visitors(db: DB, tracking_id: i32) -> Result<impl warp::Reply,
     Ok(warp::reply::json(&ListVisitorsResponse { visitors }))
 }
 
+#[derive(Serialize)]
+struct ListSourcesResponse {
+    sources: Vec<SingleSource>,
+}
+
 pub async fn list_sources(db: DB, tracking_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Listing sources");
 
-    let sources = db.list_sources(tracking_id).await.map_err(|e| {
+    let mut sources = db.list_sources(tracking_id).await.map_err(|e| {
         log::error!("Error listing sources: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
 
     let visitors_without_source = db
-        .count_visitors_without_source(tracking_id)
+        .visitors_and_sessions_no_source(tracking_id)
         .await
         .map_err(|e| {
             log::error!("Error counting visitors without source: {}", e);
             warp::reject::custom(DatabaseError)
         })?;
 
-    Ok(warp::reply::json(&ListSourcesResponse {
-        sources,
-        direct_visitors: visitors_without_source,
-    }))
+    sources.push(visitors_without_source);
+
+    Ok(warp::reply::json(&ListSourcesResponse { sources }))
 }
