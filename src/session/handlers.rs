@@ -11,15 +11,10 @@ use crate::{
     errors::{DatabaseError, MissingSessionId},
 };
 
-#[derive(Deserialize)]
-pub struct SourceName {
-    source_name: Option<String>,
-}
-
 pub async fn extract_source_id(
     db: DB,
-    SourceName { source_name }: SourceName,
-) -> Result<Option<i32>, reject::Rejection> {
+    source_name: Option<String>,
+) -> Result<(DB, Option<i32>), reject::Rejection> {
     log::info!("Extracting source name: {:?}", source_name);
     let id = match source_name {
         Some(source_name) => Some(db.id_from_source_name(&source_name).await.map_err(|e| {
@@ -29,17 +24,29 @@ pub async fn extract_source_id(
         None => None,
     };
 
-    Ok(id)
+    Ok((db, id))
+}
+
+pub async fn extract_tracking_id(
+    db: DB,
+    tracking_id: String,
+) -> Result<(DB, i32), reject::Rejection> {
+    let tracking_id = db.id_from_tracking_id(&tracking_id).await.map_err(|e| {
+        log::error!("Error getting tracking id: {}", e);
+        reject::custom(DatabaseError)
+    })?;
+
+    Ok((db, tracking_id))
 }
 
 pub async fn extract_visitor_id(
     db: DB,
-    visitor_id: Option<String>,
     source_id: Option<i32>,
+    tracking_id: i32,
+    visitor_id: Option<String>,
     user_agent: String,
     referer: String,
     ua_parser: Arc<uaparser::UserAgentParser>,
-    tracking_id: i32,
 ) -> Result<(i32, String), reject::Rejection> {
     match visitor_id {
         Some(visitor_id) => {
@@ -63,6 +70,7 @@ pub async fn extract_visitor_id(
         }
     }
 }
+
 pub async fn extract_session_id(session_id: Option<String>) -> Result<String, reject::Rejection> {
     let session_id = session_id.ok_or_else(|| {
         log::error!("Missing session id");
@@ -81,13 +89,13 @@ pub struct SessionStart {
 
 pub async fn session_start(
     db: DB,
+    tracking_id: i32,
     (visitor_id, visitor_id_public): (i32, String),
     SessionStart {
         timestamp,
         title,
         pathname,
     }: SessionStart,
-    tracking_id: i32,
 ) -> Result<impl warp::Reply, reject::Rejection> {
     log::info!("session-start");
     log::info!("visitor_id: {}", visitor_id);
