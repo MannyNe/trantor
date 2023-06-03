@@ -647,24 +647,21 @@ impl DB {
         Ok(trackings)
     }
 
-    pub async fn tracking_owner(&self, tracking_id: &str) -> Result<i32> {
+    pub async fn tracking_owner_and_primary_key(&self, tracking_id: &str) -> Result<(i32, i32)> {
         let rec = sqlx::query!(
-            r#"SELECT owner_id FROM trackings WHERE tracking_id = $1"#,
+            r#"SELECT id, owner_id FROM trackings WHERE tracking_id = $1"#,
             tracking_id
         )
         .fetch_one(&self.pool)
         .await?;
 
-        Ok(rec.owner_id)
+        Ok((rec.id, rec.owner_id))
     }
 
-    pub async fn tracking_name(&self, tracking_id: &str) -> Result<String> {
-        let rec = sqlx::query!(
-            r#"SELECT name FROM trackings WHERE tracking_id = $1"#,
-            tracking_id
-        )
-        .fetch_one(&self.pool)
-        .await?;
+    pub async fn tracking_name(&self, tracking_id: i32) -> Result<String> {
+        let rec = sqlx::query!(r#"SELECT name FROM trackings WHERE id = $1"#, tracking_id)
+            .fetch_one(&self.pool)
+            .await?;
 
         Ok(rec.name)
     }

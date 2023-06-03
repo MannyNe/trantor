@@ -14,7 +14,7 @@ struct CountVisitorsResponse {
     count: Option<i64>,
 }
 
-pub async fn count_visitors(db: DB, _user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn count_visitors(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Counting visitors");
 
     let count = db.count_visitors().await.map_err(|e| {
@@ -33,7 +33,6 @@ pub struct CreateSourceRequest {
 pub async fn create_source(
     db: DB,
     request: CreateSourceRequest,
-    _user_id: i32,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Creating source: {}", request.name);
 
@@ -54,7 +53,7 @@ struct ListSourcesResponse {
     direct_visitors: Option<i64>,
 }
 
-pub async fn list_sources(db: DB, _user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn list_sources(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Listing sources");
 
     let sources = db.list_sources().await.map_err(|e| {
@@ -73,7 +72,7 @@ pub async fn list_sources(db: DB, _user_id: i32) -> Result<impl warp::Reply, war
     }))
 }
 
-pub async fn list_sessions(db: DB, _user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn list_sessions(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Listing sessions");
 
     let sessions = db.list_sessions().await.map_err(|e| {
@@ -118,8 +117,7 @@ pub struct CreateTrackingRequest {
 }
 
 pub async fn create_tracking(
-    db: DB,
-    user_id: i32,
+    (db, user_id): (DB, i32),
     req: CreateTrackingRequest,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Creating tracking");
@@ -138,7 +136,7 @@ struct TrackingStatsResponse {
     trackings: Vec<SingleTracking>,
 }
 
-pub async fn list_trackings(db: DB, user_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn list_trackings((db, user_id): (DB, i32)) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Listing trackings");
 
     let trackings = db.list_trackings(user_id).await.map_err(|e| {
@@ -162,30 +160,14 @@ pub struct TrackingResponse {
 }
 
 pub async fn get_tracking(
-    tracking_id: String,
-    db: DB,
-    user_id: i32,
+    (db, tracking_id): (DB, i32),
 ) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Getting tracking");
 
-    let owner_id = db.tracking_owner(&tracking_id).await.map_err(|e| {
-        log::error!("Error getting owner id: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-    let tracking_name = db.tracking_name(&tracking_id).await.map_err(|e| {
+    let tracking_name = db.tracking_name(tracking_id).await.map_err(|e| {
         log::error!("Error getting tracking name: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
-
-    let tracking_id = db.id_from_tracking_id(&tracking_id).await.map_err(|e| {
-        log::error!("Error getting tracking id: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-
-    if owner_id != user_id {
-        log::error!("User {} tried to access tracking {}", user_id, tracking_id);
-        return Err(warp::reject::custom(DatabaseError));
-    }
 
     let session_count_by_weekday =
         db.count_sessions_by_weekday(tracking_id)
@@ -248,26 +230,9 @@ struct ListVisitorsResponse {
 }
 
 pub async fn list_visitors(
-    tracking_id: String,
-    db: DB,
-    user_id: i32,
+    (db, tracking_id): (DB, i32),
 ) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Listing visitors");
-
-    let owner_id = db.tracking_owner(&tracking_id).await.map_err(|e| {
-        log::error!("Error getting owner id: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-
-    let tracking_id = db.id_from_tracking_id(&tracking_id).await.map_err(|e| {
-        log::error!("Error getting tracking id: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-
-    if owner_id != user_id {
-        log::error!("User {} tried to access tracking {}", user_id, tracking_id);
-        return Err(warp::reject::custom(DatabaseError));
-    }
 
     let visitors = db.list_visitors(tracking_id).await.map_err(|e| {
         log::error!("Error listing visitors: {}", e);
