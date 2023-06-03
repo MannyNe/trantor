@@ -53,25 +53,6 @@ struct ListSourcesResponse {
     direct_visitors: Option<i64>,
 }
 
-pub async fn list_sources(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Listing sources");
-
-    let sources = db.list_sources().await.map_err(|e| {
-        log::error!("Error listing sources: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-
-    let visitors_without_source = db.count_visitors_without_source().await.map_err(|e| {
-        log::error!("Error counting visitors without source: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-
-    Ok(warp::reply::json(&ListSourcesResponse {
-        sources,
-        direct_visitors: visitors_without_source,
-    }))
-}
-
 pub async fn list_sessions(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Listing sessions");
 
@@ -159,9 +140,7 @@ pub struct TrackingResponse {
     visitor_count_by_device: Vec<VisitorCountByDevice>,
 }
 
-pub async fn get_tracking(
-    (db, tracking_id): (DB, i32),
-) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn get_tracking(db: DB, tracking_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Getting tracking");
 
     let tracking_name = db.tracking_name(tracking_id).await.map_err(|e| {
@@ -229,9 +208,7 @@ struct ListVisitorsResponse {
     visitors: Vec<SingleVisitor>,
 }
 
-pub async fn list_visitors(
-    (db, tracking_id): (DB, i32),
-) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn list_visitors(db: DB, tracking_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Listing visitors");
 
     let visitors = db.list_visitors(tracking_id).await.map_err(|e| {
@@ -240,4 +217,26 @@ pub async fn list_visitors(
     })?;
 
     Ok(warp::reply::json(&ListVisitorsResponse { visitors }))
+}
+
+pub async fn list_sources(db: DB, tracking_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Listing sources");
+
+    let sources = db.list_sources(tracking_id).await.map_err(|e| {
+        log::error!("Error listing sources: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    let visitors_without_source = db
+        .count_visitors_without_source(tracking_id)
+        .await
+        .map_err(|e| {
+            log::error!("Error counting visitors without source: {}", e);
+            warp::reject::custom(DatabaseError)
+        })?;
+
+    Ok(warp::reply::json(&ListSourcesResponse {
+        sources,
+        direct_visitors: visitors_without_source,
+    }))
 }

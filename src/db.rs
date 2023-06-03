@@ -187,11 +187,14 @@ impl DB {
         Ok(visitors)
     }
 
-    pub async fn count_visitors_without_source(&self) -> Result<Option<i64>> {
-        let rec =
-            sqlx::query!(r#"SELECT COUNT(id) as count FROM visitors WHERE source_id IS NULL"#)
-                .fetch_one(&self.pool)
-                .await?;
+    pub async fn count_visitors_without_source(&self, tracking_id: i32) -> Result<Option<i64>> {
+        let rec = sqlx::query!(
+            r#"SELECT COUNT(id) as count FROM visitors
+            WHERE source_id IS NULL AND tracking_id = $1"#,
+            tracking_id
+        )
+        .fetch_one(&self.pool)
+        .await?;
 
         Ok(rec.count)
     }
@@ -506,7 +509,7 @@ impl DB {
         Ok(())
     }
 
-    pub async fn list_sources(&self) -> Result<Vec<SingleSource>> {
+    pub async fn list_sources(&self, tracking_id: i32) -> Result<Vec<SingleSource>> {
         let sources = sqlx::query_as!(
             SingleSource,
             r#"
@@ -514,8 +517,10 @@ impl DB {
                 COUNT(visitors.id) as "visitor_count!"
             FROM sources
                 LEFT JOIN visitors ON visitors.source_id = sources.id
+            WHERE visitors.tracking_id = $1
             GROUP BY sources.name
-            "#
+            "#,
+            tracking_id
         )
         .fetch_all(&self.pool)
         .await?;

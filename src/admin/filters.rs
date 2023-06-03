@@ -35,14 +35,6 @@ pub fn make_admin_routes(
         .and(warp::body::json::<CreateSourceRequest>())
         .and_then(handlers::create_source);
 
-    let list_sources = warp::path!("sources")
-        .and(warp::get())
-        .and(with_db(db.clone()))
-        .and(extract_basic_token())
-        .and_then(authenticate_filter)
-        .map(|(db, _)| db)
-        .and_then(handlers::list_sources);
-
     let list_sessions = warp::path!("sessions")
         .and(warp::get())
         .and(with_db(db.clone()))
@@ -72,7 +64,7 @@ pub fn make_admin_routes(
         .and_then(authenticate_filter)
         .and(warp::path!("trackings" / String))
         .and_then(user_id_owns_tracking)
-        .and_then(handlers::get_tracking);
+        .and_then(|(db, tracking_id)| handlers::get_tracking(db, tracking_id));
 
     let list_visitors = warp::get()
         .and(with_db(db.clone()))
@@ -80,7 +72,15 @@ pub fn make_admin_routes(
         .and_then(authenticate_filter)
         .and(warp::path!("trackings" / String / "visitors"))
         .and_then(user_id_owns_tracking)
-        .and_then(handlers::list_visitors);
+        .and_then(|(db, tracking_id)| handlers::list_visitors(db, tracking_id));
+
+    let list_sources = warp::get()
+        .and(with_db(db.clone()))
+        .and(extract_basic_token())
+        .and_then(authenticate_filter)
+        .and(warp::path!("trackings" / String / "sources"))
+        .and_then(user_id_owns_tracking)
+        .and_then(|(db, tracking_id)| handlers::list_sources(db, tracking_id));
 
     let create_user = warp::path!("users")
         .and(warp::post())
