@@ -123,6 +123,26 @@
 		form.reset();
 		await invalidateAll();
 	}
+
+	async function deleteSource(name: string) {
+		const confirmed = confirm(`Are you sure you want to delete "${name}"?`);
+		if (!confirmed) return;
+
+		const authToken = getAuthToken();
+
+		const res = await fetch(`/admin/trackings/${$page.params.id}/sources/${name}`, {
+			method: 'DELETE',
+			headers: {
+				Authorization: `Basic ${authToken}`
+			}
+		});
+
+		if (res.status !== 204) {
+			alert('Something went wrong');
+		}
+
+		await invalidateAll();
+	}
 </script>
 
 <svelte:head>
@@ -176,12 +196,32 @@
 					<th>Source Name</th>
 					<th>Session Count</th>
 					<th>Visitor Count</th>
+					<th style="border-right: 1px solid #000;" />
 				</thead>
 				{#each data.sources as source}
 					<tr>
 						<td>{source.name}</td>
 						<td>{source.session_count}</td>
 						<td>{source.visitor_count}</td>
+						<td>
+							{#if source.name !== 'direct'}
+								<button on:click={() => deleteSource(source.name)}>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke-width="1.5"
+										stroke="currentColor"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+										/>
+									</svg>
+								</button>
+							{/if}
+						</td>
 					</tr>
 				{/each}
 			</table>
@@ -193,7 +233,7 @@
 			<table>
 				<thead>
 					<th>Path</th>
-					<th>Session Count</th>
+					<th style="border-right: 1px solid #000;">Session Count</th>
 				</thead>
 				{#each data.paths as path}
 					<tr>
@@ -371,6 +411,7 @@
 		text-align: left;
 		font-size: 0.8rem;
 		font-family: monospace;
+		border-right: 1px solid #fff;
 	}
 
 	td,
@@ -379,8 +420,8 @@
 	}
 
 	thead {
-		background-color: #000;
 		color: #fff;
+		background-color: #000;
 	}
 
 	th:nth-child(2),
@@ -389,6 +430,34 @@
 	td:nth-child(3) {
 		text-align: right;
 		font-weight: bolder;
+	}
+
+	th:nth-child(4),
+	td:nth-child(4) {
+		padding: 0;
+	}
+
+	table button {
+		width: 100%;
+		padding: 0.5rem;
+		background-color: red;
+		color: white;
+		border: none;
+		cursor: pointer;
+	}
+
+	table button svg {
+		width: 1rem;
+		height: 1rem;
+	}
+
+	table button:hover,
+	table button:focus {
+		background-color: #ff0000aa;
+	}
+
+	table button:active {
+		transform: scale(0.9);
 	}
 
 	.add-source {

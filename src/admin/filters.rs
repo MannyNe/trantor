@@ -44,13 +44,6 @@ pub fn make_admin_routes(
         .and_then(user_id_owns_tracking)
         .and_then(|(db, tracking_id)| handlers::get_tracking(db, tracking_id));
 
-    let list_sources = warp::get()
-        .and(with_db(db.clone()))
-        .and(extract_basic_token())
-        .and_then(authenticate_filter)
-        .and(warp::path!("trackings" / String / "sources"))
-        .and_then(user_id_owns_tracking)
-        .and_then(|(db, tracking_id)| handlers::list_sources(db, tracking_id));
     let create_source = warp::post()
         .and(with_db(db.clone()))
         .and(extract_basic_token())
@@ -59,6 +52,26 @@ pub fn make_admin_routes(
         .and_then(user_id_owns_tracking)
         .and(warp::body::json::<CreateSourceRequest>())
         .and_then(|(db, tracking_id), source| handlers::create_source(db, tracking_id, source));
+    let list_sources = warp::get()
+        .and(with_db(db.clone()))
+        .and(extract_basic_token())
+        .and_then(authenticate_filter)
+        .and(warp::path!("trackings" / String / "sources"))
+        .and_then(user_id_owns_tracking)
+        .and_then(|(db, tracking_id)| handlers::list_sources(db, tracking_id));
+    let delete_source = warp::delete()
+        .and(with_db(db.clone()))
+        .and(extract_basic_token())
+        .and_then(authenticate_filter)
+        .and(warp::path!("trackings" / String / "sources" / String))
+        .and_then(|first, tracking_id, source_name| async move {
+            user_id_owns_tracking(first, tracking_id)
+                .await
+                .map(|(db, tracking_id)| (db, tracking_id, source_name))
+        })
+        .and_then(|(db, tracking_id, source_name)| {
+            handlers::delete_source(db, tracking_id, source_name)
+        });
 
     let count_paths = warp::get()
         .and(with_db(db))
@@ -76,6 +89,7 @@ pub fn make_admin_routes(
             .or(get_tracking)
             .or(create_source)
             .or(list_sources)
+            .or(delete_source)
             .or(count_paths),
     )
 }

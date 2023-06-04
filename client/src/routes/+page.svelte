@@ -45,7 +45,7 @@
 	<div class="trackings-grid">
 		<div class="card form-card">
 			<form on:submit|preventDefault={handleCreateTracking}>
-				<input required name="name" type="text" placeholder="Name" />
+				<input required name="name" type="text" placeholder="Name" autocomplete="off" />
 				<button type="submit">Create Tracking</button>
 			</form>
 		</div>

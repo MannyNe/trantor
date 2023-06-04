@@ -415,6 +415,18 @@ impl DB {
         Ok(())
     }
 
+    pub async fn delete_source(&self, name: &str, tracking_id: i32) -> Result<()> {
+        let _ = sqlx::query!(
+            r#"DELETE FROM sources WHERE name = $1 AND tracking_id = $2"#,
+            name,
+            tracking_id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
     pub async fn list_sources(&self, tracking_id: i32) -> Result<Vec<SingleSource>> {
         let sources = sqlx::query_as!(
             SingleSource,

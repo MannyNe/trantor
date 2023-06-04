@@ -8,29 +8,10 @@ use crate::{
     errors::DatabaseError,
 };
 
-#[derive(Deserialize)]
-pub struct CreateSourceRequest {
-    name: String,
-}
+// User Routes
 
-pub async fn create_source(
-    db: DB,
-    tracking_id: i32,
-    request: CreateSourceRequest,
-) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Creating source: {}", request.name);
-
-    db.create_source(&request.name, tracking_id)
-        .await
-        .map_err(|e| {
-            log::error!("Error creating source: {}", e);
-            warp::reject::custom(DatabaseError)
-        })?;
-
-    Ok(warp::reply::with_status(
-        warp::reply(),
-        warp::http::StatusCode::CREATED,
-    ))
+pub async fn authenticate_user() -> Result<impl warp::Reply, warp::Rejection> {
+    Ok(warp::reply())
 }
 
 #[derive(Deserialize)]
@@ -57,9 +38,7 @@ pub async fn create_user(
     ))
 }
 
-pub async fn authenticate_user() -> Result<impl warp::Reply, warp::Rejection> {
-    Ok(warp::reply())
-}
+// Tracking Routes
 
 #[derive(Deserialize)]
 pub struct CreateTrackingRequest {
@@ -174,6 +153,33 @@ pub async fn get_tracking(db: DB, tracking_id: i32) -> Result<impl warp::Reply, 
     }))
 }
 
+// Source Routes
+
+#[derive(Deserialize)]
+pub struct CreateSourceRequest {
+    name: String,
+}
+
+pub async fn create_source(
+    db: DB,
+    tracking_id: i32,
+    request: CreateSourceRequest,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Creating source: {}", request.name);
+
+    db.create_source(&request.name, tracking_id)
+        .await
+        .map_err(|e| {
+            log::error!("Error creating source: {}", e);
+            warp::reject::custom(DatabaseError)
+        })?;
+
+    Ok(warp::reply::with_status(
+        warp::reply(),
+        warp::http::StatusCode::CREATED,
+    ))
+}
+
 #[derive(Serialize)]
 struct ListSourcesResponse {
     sources: Vec<SingleSource>,
@@ -199,6 +205,28 @@ pub async fn list_sources(db: DB, tracking_id: i32) -> Result<impl warp::Reply, 
 
     Ok(warp::reply::json(&ListSourcesResponse { sources }))
 }
+
+pub async fn delete_source(
+    db: DB,
+    tracking_id: i32,
+    source_name: String,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Deleting source: {}", source_name);
+
+    db.delete_source(&source_name, tracking_id)
+        .await
+        .map_err(|e| {
+            log::error!("Error creating source: {}", e);
+            warp::reject::custom(DatabaseError)
+        })?;
+
+    Ok(warp::reply::with_status(
+        warp::reply(),
+        warp::http::StatusCode::NO_CONTENT,
+    ))
+}
+
+// Path Routes
 
 #[derive(Serialize)]
 struct ListPathsResponse {
