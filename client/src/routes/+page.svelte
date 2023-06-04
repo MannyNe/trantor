@@ -14,7 +14,6 @@
 		const name = formData.get('name')! as string;
 
 		const authToken = getAuthToken();
-		if (!authToken) return;
 
 		const res = await fetch('/admin/trackings', {
 			method: 'POST',
@@ -101,7 +100,7 @@
 	}
 
 	a:active {
-		transform: scale(0.95);
+		transform: scale(0.9);
 	}
 
 	.title {

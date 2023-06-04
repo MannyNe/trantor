@@ -46,9 +46,11 @@ const SourceSchema = z.object({
 });
 
 export const SourcesSchema = z.object({
-	sources: z.array(SourceSchema)
+	sources: z
+		.array(SourceSchema)
+		.transform((v) => v.sort((a, b) => b.session_count - a.session_count))
 });
 
 export const CountPathsSchema = z.object({
-	paths: z.array(pathCountSchema)
+	paths: z.array(pathCountSchema).transform((v) => v.sort((a, b) => b.count - a.count))
 });

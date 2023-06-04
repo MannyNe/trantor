@@ -27,6 +27,15 @@
 		color: inherit;
 	}
 
+	a:hover,
+	a:focus {
+		background-color: #000000aa;
+	}
+
+	a:active {
+		transform: scale(0.9);
+	}
+
 	header {
 		display: flex;
 		align-items: center;
@@ -67,9 +76,14 @@
 		font-size: 1rem;
 	}
 
-	button:hover {
+	button:hover,
+	button:focus {
 		background-color: #000;
 		color: #fff;
+	}
+
+	button:active {
+		transform: scale(0.9);
 	}
 
 	@media (max-width: 500px) {

@@ -3,14 +3,13 @@
 	import type { ChartData, ChartType } from 'chart.js/auto';
 
 	import { page } from '$app/stores';
+	import { getAuthToken } from '$lib/auth';
+	import { invalidateAll } from '$app/navigation';
 	import Chart from '$lib/components/Chart.svelte';
 
 	type CustomChartData<T extends ChartType> = ChartData<T, number[], string>;
 
 	export let data: PageData;
-	const tracking = data.tracking;
-	const sources = data.sources.sort((a, b) => b.session_count - a.session_count);
-	const paths = data.paths.sort((a, b) => b.count - a.count);
 
 	const weekdayToString: Record<number, string> = {
 		0: 'Sun',
@@ -23,76 +22,76 @@
 	};
 
 	for (let i = 0; i < 7; i++) {
-		if (!tracking.session_count_by_weekday.find((s) => s.weekday === i)) {
-			tracking.session_count_by_weekday.push({ weekday: i, count: 0 });
+		if (!data.tracking.session_count_by_weekday.find((s) => s.weekday === i)) {
+			data.tracking.session_count_by_weekday.push({ weekday: i, count: 0 });
 		}
-		if (!tracking.visitor_count_by_weekday.find((s) => s.weekday === i)) {
-			tracking.visitor_count_by_weekday.push({ weekday: i, count: 0 });
+		if (!data.tracking.visitor_count_by_weekday.find((s) => s.weekday === i)) {
+			data.tracking.visitor_count_by_weekday.push({ weekday: i, count: 0 });
 		}
 	}
-	tracking.session_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
-	tracking.visitor_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
+	data.tracking.session_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
+	data.tracking.visitor_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
 
 	const sessionsAndVisitorsChartData: CustomChartData<'bar'> = {
-		labels: tracking.session_count_by_weekday.map((s) => weekdayToString[s.weekday]),
+		labels: data.tracking.session_count_by_weekday.map((s) => weekdayToString[s.weekday]),
 		datasets: [
 			{
 				label: 'Sessions Per Day',
-				data: tracking.session_count_by_weekday.map((s) => s.count)
+				data: data.tracking.session_count_by_weekday.map((s) => s.count)
 			},
 			{
 				label: 'Visitors Per Day',
-				data: tracking.visitor_count_by_weekday.map((s) => s.count)
+				data: data.tracking.visitor_count_by_weekday.map((s) => s.count)
 			}
 		]
 	};
 
 	for (let i = 0; i < 24; i++) {
-		if (!tracking.session_count_by_hour.find((s) => s.hour === i)) {
-			tracking.session_count_by_hour.push({ hour: i, count: 0 });
+		if (!data.tracking.session_count_by_hour.find((s) => s.hour === i)) {
+			data.tracking.session_count_by_hour.push({ hour: i, count: 0 });
 		}
-		if (!tracking.visitor_count_by_hour.find((s) => s.hour === i)) {
-			tracking.visitor_count_by_hour.push({ hour: i, count: 0 });
+		if (!data.tracking.visitor_count_by_hour.find((s) => s.hour === i)) {
+			data.tracking.visitor_count_by_hour.push({ hour: i, count: 0 });
 		}
 	}
-	tracking.session_count_by_hour.sort((a, b) => a.hour - b.hour);
-	tracking.visitor_count_by_hour.sort((a, b) => a.hour - b.hour);
+	data.tracking.session_count_by_hour.sort((a, b) => a.hour - b.hour);
+	data.tracking.visitor_count_by_hour.sort((a, b) => a.hour - b.hour);
 
 	const sessionsAndVisitorsByHourChartData: CustomChartData<'radar'> = {
-		labels: tracking.session_count_by_hour.map((s) => s.hour.toString()),
+		labels: data.tracking.session_count_by_hour.map((s) => s.hour.toString()),
 		datasets: [
 			{
 				label: 'Sessions Per Hour',
-				data: tracking.session_count_by_hour.map((s) => s.count)
+				data: data.tracking.session_count_by_hour.map((s) => s.count)
 			},
 			{
 				label: 'Visitors Per Hour',
-				data: tracking.visitor_count_by_hour.map((s) => s.count)
+				data: data.tracking.visitor_count_by_hour.map((s) => s.count)
 			}
 		]
 	};
 
 	const visitorsCountByBrowser: CustomChartData<'doughnut'> = {
-		labels: tracking.visitor_count_by_browser.map((v) => v.browser),
+		labels: data.tracking.visitor_count_by_browser.map((v) => v.browser),
 		datasets: [
 			{
-				data: tracking.visitor_count_by_browser.map((v) => v.count)
+				data: data.tracking.visitor_count_by_browser.map((v) => v.count)
 			}
 		]
 	};
 	const visitorsCountByOs: CustomChartData<'doughnut'> = {
-		labels: tracking.visitor_count_by_os.map((v) => v.os),
+		labels: data.tracking.visitor_count_by_os.map((v) => v.os),
 		datasets: [
 			{
-				data: tracking.visitor_count_by_os.map((v) => v.count)
+				data: data.tracking.visitor_count_by_os.map((v) => v.count)
 			}
 		]
 	};
 	const visitorsCountByDevice: CustomChartData<'doughnut'> = {
-		labels: tracking.visitor_count_by_device.map((v) => v.device),
+		labels: data.tracking.visitor_count_by_device.map((v) => v.device),
 		datasets: [
 			{
-				data: tracking.visitor_count_by_device.map((v) => v.count)
+				data: data.tracking.visitor_count_by_device.map((v) => v.count)
 			}
 		]
 	};
@@ -100,15 +99,39 @@
 	function copyTrackingId() {
 		navigator.clipboard.writeText($page.params.id);
 	}
+
+	async function handleAddSource(event: Event) {
+		const form = event.target as HTMLFormElement;
+		const formData = new FormData(form);
+		const name = formData.get('name') as string;
+
+		const authToken = getAuthToken();
+
+		const res = await fetch(`/admin/trackings/${$page.params.id}/sources`, {
+			method: 'POST',
+			headers: {
+				Authorization: `Basic ${authToken}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ name })
+		});
+
+		if (res.status !== 201) {
+			alert('Something went wrong');
+		}
+
+		form.reset();
+		await invalidateAll();
+	}
 </script>
 
 <svelte:head>
-	<title>{tracking.name} | Tracking Data</title>
+	<title>{data.tracking.name} | Tracking Data</title>
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 
 <div class="app">
-	<h1>Tracking data for <span>{tracking.name}</span></h1>
+	<h1>Tracking data for <span>{data.tracking.name}</span></h1>
 
 	<div class="tracking-id">
 		<div>
@@ -144,13 +167,17 @@
 		<section class="table-container">
 			<h1>Sources</h1>
 
+			<form class="add-source" on:submit|preventDefault={handleAddSource}>
+				<input required name="name" placeholder="Name" type="text" autocomplete="off" />
+				<button type="submit">Add Source</button>
+			</form>
 			<table>
 				<thead>
 					<th>Source Name</th>
 					<th>Session Count</th>
 					<th>Visitor Count</th>
 				</thead>
-				{#each sources as source}
+				{#each data.sources as source}
 					<tr>
 						<td>{source.name}</td>
 						<td>{source.session_count}</td>
@@ -168,7 +195,7 @@
 					<th>Path</th>
 					<th>Session Count</th>
 				</thead>
-				{#each paths as path}
+				{#each data.paths as path}
 					<tr>
 						<td>{path.pathname}</td>
 						<td>{path.count}</td>
@@ -249,7 +276,7 @@
 	}
 
 	.tracking-id button:active {
-		scale: 0.9;
+		transform: scale(0.9);
 	}
 
 	.stats {
@@ -362,5 +389,36 @@
 	td:nth-child(3) {
 		text-align: right;
 		font-weight: bolder;
+	}
+
+	.add-source {
+		display: grid;
+		grid-template-columns: 70% 30%;
+		margin-bottom: 1rem;
+	}
+
+	.add-source input {
+		padding: 0.5rem;
+		font-family: monospace;
+		border: 1px solid #000;
+		background-color: transparent;
+	}
+
+	.add-source button {
+		padding: 0.5rem;
+		font-family: 'Press Start 2P', cursive;
+		background-color: black;
+		color: white;
+		border: none;
+		cursor: pointer;
+	}
+
+	.add-source button:hover,
+	.add-source button:focus {
+		background-color: #000000aa;
+	}
+
+	.add-source button:active {
+		transform: scale(0.9);
 	}
 </style>
