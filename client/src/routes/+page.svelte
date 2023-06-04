@@ -4,6 +4,7 @@
 	import type { PageData } from './$types';
 	import { getAuthToken } from '$lib/auth';
 	import { invalidateAll } from '$app/navigation';
+	import { pluralized } from '$lib/utils';
 
 	export let data: PageData;
 
@@ -58,22 +59,22 @@
 				<div class="stats">
 					<div>
 						<span class="number">{tracking.visitor_count}</span>
-						<span>visitors</span>
+						<span>{pluralized(tracking.visitor_count, 'visitor', 'visitors')}</span>
 					</div>
 
 					<div>
 						<span class="number">{tracking.sessions_count}</span>
-						<span>sessions</span>
+						<span>{pluralized(tracking.sessions_count, 'visitor', 'visitors')}</span>
 					</div>
 
 					<div>
 						<span class="number">{tracking.events_count}</span>
-						<span>events</span>
+						<span>{pluralized(tracking.events_count, 'event', 'events')}</span>
 					</div>
 
 					<div>
 						<span class="number">{tracking.sources_count}</span>
-						<span>sources</span>
+						<span>{pluralized(tracking.sources_count, 'source', 'sources')}</span>
 					</div>
 				</div>
 			</a>
