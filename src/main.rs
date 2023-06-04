@@ -43,11 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let routes = admin_routes
         .or(session_routes)
         .or(warp::fs::dir("client/build"))
-        .or(warp::path("login").and(warp::fs::file("client/build/index.html")))
-        .or(warp::path!("trackings" / String)
-            .map(|_| ())
-            .untuple_one()
-            .and(warp::fs::file("client/build/index.html")))
+        .or(warp::any().and(warp::fs::file("client/build/index.html")))
         .recover(errors::handle_rejection)
         .with(cors);
 
