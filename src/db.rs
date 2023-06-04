@@ -2,7 +2,6 @@ use std::{convert::Infallible, sync::Arc};
 
 use serde::Serialize;
 use sqlx::{
-    postgres::types::PgInterval,
     types::{chrono::NaiveDateTime, BigDecimal},
     FromRow, PgPool,
 };
@@ -94,18 +93,6 @@ impl NewVisitorData {
 }
 
 #[derive(FromRow, Serialize)]
-pub struct SingleVisitor {
-    id: String,
-    referer: String,
-    os: String,
-    device: String,
-    browser: String,
-    #[serde(with = "native_date_format")]
-    created_at: NaiveDateTime,
-    source_name: Option<String>,
-}
-
-#[derive(FromRow, Serialize)]
 pub struct CountByWeekday {
     #[serde(with = "big_decimal_to_u8")]
     weekday: BigDecimal,
@@ -160,37 +147,6 @@ impl DB {
         .await?;
 
         Ok(rec.id)
-    }
-
-    pub async fn count_visitors(&self) -> Result<Option<i64>> {
-        let rec = sqlx::query!(r#"SELECT COUNT(id) as count FROM visitors"#)
-            .fetch_one(&self.pool)
-            .await?;
-
-        Ok(rec.count)
-    }
-
-    pub async fn list_visitors(&self, tracking_id: i32) -> Result<Vec<SingleVisitor>> {
-        let visitors = sqlx::query_as!(
-            SingleVisitor,
-            r#"
-            SELECT visitors.visitor_id as "id!",
-                visitors.referer as "referer!",
-                visitors.created_at as "created_at!",
-                visitors.user_agent_parsed->'os'->>'family' AS "os!",
-                visitors.user_agent_parsed->'device'->>'family' AS "device!",
-                visitors.user_agent_parsed->'user_agent'->>'family' AS "browser!",
-                sources.name as "source_name?"
-            FROM visitors
-                LEFT JOIN sources ON visitors.source_id = sources.id
-            WHERE visitors.tracking_id = $1
-        "#,
-            tracking_id
-        )
-        .fetch_all(&self.pool)
-        .await?;
-
-        Ok(visitors)
     }
 
     pub async fn count_visitors_by_weekday(&self, tracking_id: i32) -> Result<Vec<CountByWeekday>> {
@@ -318,21 +274,6 @@ impl NewSessionData {
     }
 }
 
-#[derive(FromRow, Serialize)]
-pub struct SingleSession {
-    id: String,
-    title: String,
-    pathname: String,
-    #[serde(with = "native_date_format")]
-    start_timestamp: NaiveDateTime,
-    #[serde(with = "optional_native_date_format")]
-    end_timestamp: Option<NaiveDateTime>,
-    #[serde(with = "optional_pg_interval_format")]
-    start_latency: Option<PgInterval>,
-    #[serde(with = "optional_pg_interval_format")]
-    end_latency: Option<PgInterval>,
-}
-
 impl DB {
     pub async fn create_session(&self, data: &NewSessionData) -> Result<()> {
         sqlx::query!(
@@ -386,26 +327,6 @@ impl DB {
         .await?;
 
         Ok(())
-    }
-
-    pub async fn list_sessions(&self) -> Result<Vec<SingleSession>> {
-        let sessions = sqlx::query_as!(
-            SingleSession,
-            r#"
-            SELECT session_id as id,
-                title,
-                pathname,
-                start_timestamp,
-                end_timestamp,
-                created_at - start_timestamp as start_latency,
-                ended_at - end_timestamp as end_latency
-            FROM sessions
-        "#
-        )
-        .fetch_all(&self.pool)
-        .await?;
-
-        Ok(sessions)
     }
 
     pub async fn count_sessions(&self) -> Result<Option<i64>> {
@@ -693,40 +614,6 @@ mod native_date_format {
         S: Serializer,
     {
         serializer.serialize_i64(date.timestamp_millis())
-    }
-}
-
-mod optional_native_date_format {
-    use serde::{self, Serializer};
-    use sqlx::types::chrono::NaiveDateTime;
-
-    pub fn serialize<S>(date: &Option<NaiveDateTime>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match date {
-            Some(date) => serializer.serialize_i64(date.timestamp_millis()),
-            None => serializer.serialize_none(),
-        }
-    }
-}
-
-mod optional_pg_interval_format {
-    use serde::{self, Serializer};
-    use sqlx::postgres::types::PgInterval;
-
-    pub fn serialize<S>(interval: &Option<PgInterval>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match interval {
-            Some(interval) => serializer.serialize_some(&serde_json::json!({
-                "months": interval.months,
-                "days": interval.days,
-                "microseconds": interval.microseconds,
-            })),
-            None => serializer.serialize_none(),
-        }
     }
 }
 

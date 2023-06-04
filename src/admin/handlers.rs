@@ -3,26 +3,10 @@ use serde::{Deserialize, Serialize};
 use crate::{
     db::{
         CountByBrowser, CountByDevice, CountByHour, CountByOs, CountByPathname, CountByWeekday,
-        NewTrackingData, NewUserData, SingleSource, SingleTracking, SingleVisitor, DB,
+        NewTrackingData, NewUserData, SingleSource, SingleTracking, DB,
     },
     errors::DatabaseError,
 };
-
-#[derive(Serialize)]
-struct CountVisitorsResponse {
-    count: Option<i64>,
-}
-
-pub async fn count_visitors(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Counting visitors");
-
-    let count = db.count_visitors().await.map_err(|e| {
-        log::error!("Error counting visitors: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-
-    Ok(warp::reply::json(&CountVisitorsResponse { count }))
-}
 
 #[derive(Deserialize)]
 pub struct CreateSourceRequest {
@@ -47,17 +31,6 @@ pub async fn create_source(
         warp::reply(),
         warp::http::StatusCode::CREATED,
     ))
-}
-
-pub async fn list_sessions(db: DB) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Listing sessions");
-
-    let sessions = db.list_sessions().await.map_err(|e| {
-        log::error!("Error listing sessions: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-
-    Ok(warp::reply::json(&sessions))
 }
 
 #[derive(Deserialize)]
@@ -199,22 +172,6 @@ pub async fn get_tracking(db: DB, tracking_id: i32) -> Result<impl warp::Reply, 
         visitor_count_by_browser,
         visitor_count_by_device,
     }))
-}
-
-#[derive(Serialize)]
-struct ListVisitorsResponse {
-    visitors: Vec<SingleVisitor>,
-}
-
-pub async fn list_visitors(db: DB, tracking_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Listing visitors");
-
-    let visitors = db.list_visitors(tracking_id).await.map_err(|e| {
-        log::error!("Error listing visitors: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-
-    Ok(warp::reply::json(&ListVisitorsResponse { visitors }))
 }
 
 #[derive(Serialize)]
