@@ -244,6 +244,25 @@
 			</table>
 		</section>
 	</div>
+
+	<div class="two-columns">
+		<section class="table-container">
+			<h1>Page Titles</h1>
+
+			<table>
+				<thead>
+					<th>Title</th>
+					<th style="border-right: 1px solid #000;">Session Count</th>
+				</thead>
+				{#each data.titles as title}
+					<tr>
+						<td>{title.title}</td>
+						<td>{title.count}</td>
+					</tr>
+				{/each}
+			</table>
+		</section>
+	</div>
 </div>
 
 <style>

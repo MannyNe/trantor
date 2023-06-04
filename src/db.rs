@@ -130,6 +130,12 @@ pub struct CountByPathname {
     count: i64,
 }
 
+#[derive(FromRow, Serialize)]
+pub struct CountByTitle {
+    title: String,
+    count: i64,
+}
+
 impl DB {
     pub async fn create_visitor(&self, data: &NewVisitorData) -> Result<i32> {
         let rec = sqlx::query!(
@@ -380,11 +386,29 @@ impl DB {
         let rec = sqlx::query_as!(
             CountByPathname,
             r#"
-            SELECT COUNT(id) as "count!",
-                pathname
+            SELECT COUNT(DISTINCT sessions.id) as "count!",
+                sessions.pathname as pathname
             FROM sessions
             WHERE tracking_id = $1
             GROUP BY pathname
+        "#,
+            tracking_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn count_sessions_by_title(&self, tracking_id: i32) -> Result<Vec<CountByTitle>> {
+        let rec = sqlx::query_as!(
+            CountByTitle,
+            r#"
+            SELECT COUNT(DISTINCT sessions.id) as "count!",
+                sessions.title as title
+            FROM sessions
+            WHERE tracking_id = $1
+            GROUP BY title
         "#,
             tracking_id
         )

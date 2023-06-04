@@ -9,6 +9,7 @@ const osCountSchema = countSchema.extend({ os: z.string() });
 const browserCountSchema = countSchema.extend({ browser: z.string() });
 const deviceCountSchema = countSchema.extend({ device: z.string() });
 const pathCountSchema = countSchema.extend({ pathname: z.string() });
+const titleCountSchema = countSchema.extend({ title: z.string() });
 
 export const TrackingDataSchema = z.object({
 	name: z.string(),
@@ -53,4 +54,8 @@ export const SourcesSchema = z.object({
 
 export const CountPathsSchema = z.object({
 	paths: z.array(pathCountSchema).transform((v) => v.sort((a, b) => b.count - a.count))
+});
+
+export const CountTitlesSchema = z.object({
+	titles: z.array(titleCountSchema).transform((v) => v.sort((a, b) => b.count - a.count))
 });

@@ -74,12 +74,19 @@ pub fn make_admin_routes(
         });
 
     let count_paths = warp::get()
-        .and(with_db(db))
+        .and(with_db(db.clone()))
         .and(extract_basic_token())
         .and_then(authenticate_filter)
         .and(warp::path!("trackings" / String / "paths"))
         .and_then(user_id_owns_tracking)
         .and_then(|(db, tracking_id)| handlers::count_paths(db, tracking_id));
+    let count_titles = warp::get()
+        .and(with_db(db))
+        .and(extract_basic_token())
+        .and_then(authenticate_filter)
+        .and(warp::path!("trackings" / String / "titles"))
+        .and_then(user_id_owns_tracking)
+        .and_then(|(db, tracking_id)| handlers::count_titles(db, tracking_id));
 
     warp::path("admin").and(
         authenticate_user
@@ -90,6 +97,7 @@ pub fn make_admin_routes(
             .or(create_source)
             .or(list_sources)
             .or(delete_source)
-            .or(count_paths),
+            .or(count_paths)
+            .or(count_titles),
     )
 }

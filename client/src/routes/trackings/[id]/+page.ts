@@ -2,7 +2,12 @@ export const ssr = false;
 
 import type { PageLoad } from './$types';
 import { getAuthToken } from '$lib/auth';
-import { CountPathsSchema, SourcesSchema, TrackingDataSchema } from '$lib/schema';
+import {
+	CountPathsSchema,
+	CountTitlesSchema,
+	SourcesSchema,
+	TrackingDataSchema
+} from '$lib/schema';
 
 export const load = (async ({ params, fetch }) => {
 	const authToken = getAuthToken();
@@ -31,9 +36,18 @@ export const load = (async ({ params, fetch }) => {
 	const pathsData = await pathsRes.json();
 	const { paths } = CountPathsSchema.parse(pathsData);
 
+	const titlesRes = await fetch(`/admin/trackings/${params.id}/titles`, {
+		headers: {
+			Authorization: `Basic ${authToken}`
+		}
+	});
+	const titlesData = await titlesRes.json();
+	const { titles } = CountTitlesSchema.parse(titlesData);
+
 	return {
 		tracking,
 		sources,
-		paths
+		paths,
+		titles
 	};
 }) satisfies PageLoad;
