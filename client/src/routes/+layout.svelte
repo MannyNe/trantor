@@ -1,16 +1,8 @@
 <script lang="ts">
 	import './styles.css';
-	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
-	import { isAuthenticated, authState } from '$lib/auth';
+	import { authState, initAuth } from '$lib/auth.store';
 
-	isAuthenticated.subscribe((authenticated) => {
-		if (authenticated) {
-			goto($page.url.pathname);
-		} else {
-			goto('/login');
-		}
-	});
+	initAuth();
 </script>
 
 <section>
@@ -19,7 +11,7 @@
 			<img src="/icon.svg" alt="icon" />
 			<h1>TRANTOR</h1>
 		</a>
-		{#if $isAuthenticated}
+		{#if $authState !== null}
 			<button on:click={() => authState.set(null)}>Log out</button>
 		{/if}
 	</header>

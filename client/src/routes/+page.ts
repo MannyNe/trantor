@@ -1,21 +1,18 @@
 export const ssr = false;
 
 import type { PageLoad } from './$types';
-import { listTrackings } from '$lib/api';
-import { redirect } from '@sveltejs/kit';
-import { getAuthState } from '$lib/utils';
+import { getAuthToken } from '$lib/auth';
+import { TrackingsSchema } from '$lib/schema';
 
 export const load = (async () => {
-	const auth = getAuthState();
+	const authToken = getAuthToken();
 
-	if (!auth) {
-		throw redirect(300, '/login');
-	}
-
-	const trackings = await listTrackings({
-		userId: auth.userId,
-		secretCode: auth.secretCode
+	const res = await fetch('/admin/trackings', {
+		headers: {
+			Authorization: `Basic ${authToken}`
+		}
 	});
+	const data = await res.json();
 
-	return trackings;
+	return TrackingsSchema.parse(data);
 }) satisfies PageLoad;

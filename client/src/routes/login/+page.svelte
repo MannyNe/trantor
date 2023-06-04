@@ -1,25 +1,22 @@
 <script lang="ts">
-	import { authState } from '$lib/auth';
-	import { authenticate } from '$lib/api';
 	import { goto } from '$app/navigation';
+	import { authenticate } from '$lib/auth';
+	import { authState } from '$lib/auth.store';
 
 	let errorDisplay = '';
 
-	function handleSubmit(event: Event) {
-		event.preventDefault();
+	async function handleSubmit(event: Event) {
 		const formData = new FormData(event.target as HTMLFormElement);
 
 		const userId = formData.get('userId')! as string;
 		const secretCode = formData.get('secretCode')! as string;
 
-		authenticate({
-			userId,
-			secretCode,
+		await authenticate(userId, secretCode, {
 			onSuccess: async () => {
 				authState.set({ userId, secretCode });
 				await goto('/');
 			},
-			onError: () => {
+			onError: async () => {
 				errorDisplay = 'Something Went Wrong';
 			}
 		});
@@ -34,7 +31,7 @@
 	<div>
 		<div class="form-container">
 			<h1>Welcome to Trantor!</h1>
-			<form on:submit={handleSubmit}>
+			<form on:submit|preventDefault={handleSubmit}>
 				{errorDisplay}
 				<div>
 					<input

@@ -1,87 +1,86 @@
 <script lang="ts">
-	import chartjs from 'chart.js/auto';
-	import autocolors from 'chartjs-plugin-autocolors';
-
-	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
+	import type { ChartData, ChartType } from 'chart.js/auto';
 
 	import { page } from '$app/stores';
+	import Chart from '$lib/components/Chart.svelte';
+
+	type CustomChartData<T extends ChartType> = ChartData<T, number[], string>;
 
 	export let data: PageData;
-	let sessionsAndVisitorsChart: HTMLCanvasElement;
-	let sessionsAndVisitorsChartCtx: CanvasRenderingContext2D;
 
-	let sessionsAndVisitorsByHourChart: HTMLCanvasElement;
-	let sessionsAndVisitorsByHourChartCtx: CanvasRenderingContext2D;
-
-	let visitorsCountByBrowserChart: HTMLCanvasElement;
-	let visitorsCountByBrowserChartCtx: CanvasRenderingContext2D;
-
-	let visitorsCountByOsChart: HTMLCanvasElement;
-	let visitorsCountByOsChartCtx: CanvasRenderingContext2D;
-
-	let visitorsCountByDeviceChart: HTMLCanvasElement;
-	let visitorsCountByDeviceChartCtx: CanvasRenderingContext2D;
-
-	const sessionsOnDay = (day: number) => {
-		return data.session_count_by_weekday.find((s) => s.weekday === day)?.count || 0;
+	const weekdayToString = (weekday: number) => {
+		switch (weekday) {
+			case 0:
+				return 'Sunday';
+			case 1:
+				return 'Monday';
+			case 2:
+				return 'Tuesday';
+			case 3:
+				return 'Wednesday';
+			case 4:
+				return 'Thursday';
+			case 5:
+				return 'Friday';
+			case 6:
+				return 'Saturday';
+			default:
+				return '';
+		}
 	};
-	const visitorsOnDay = (day: number) => {
-		return data.visitor_count_by_weekday.find((s) => s.weekday === day)?.count || 0;
-	};
 
-	const sessionsAndVisitorsChartData = {
-		labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+	for (let i = 0; i < 7; i++) {
+		if (!data.session_count_by_weekday.find((s) => s.weekday === i)) {
+			data.session_count_by_weekday.push({ weekday: i, count: 0 });
+		}
+		if (!data.visitor_count_by_weekday.find((s) => s.weekday === i)) {
+			data.visitor_count_by_weekday.push({ weekday: i, count: 0 });
+		}
+	}
+	data.session_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
+	data.visitor_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
+
+	const sessionsAndVisitorsChartData: CustomChartData<'bar'> = {
+		labels: data.session_count_by_weekday.map((s) => weekdayToString(s.weekday)),
 		datasets: [
 			{
 				label: 'Sessions Per Day',
-				data: [
-					sessionsOnDay(1),
-					sessionsOnDay(2),
-					sessionsOnDay(3),
-					sessionsOnDay(4),
-					sessionsOnDay(5),
-					sessionsOnDay(6),
-					sessionsOnDay(0)
-				]
+				data: data.session_count_by_weekday.map((s) => s.count)
 			},
 			{
 				label: 'Visitors Per Day',
-				data: [
-					visitorsOnDay(1),
-					visitorsOnDay(2),
-					visitorsOnDay(3),
-					visitorsOnDay(4),
-					visitorsOnDay(5),
-					visitorsOnDay(6),
-					visitorsOnDay(0)
-				]
+				data: data.visitor_count_by_weekday.map((s) => s.count)
 			}
 		]
 	};
 
-	const sessionsOnHour = (hour: number) => {
-		return data.session_count_by_hour.find((s) => s.hour === hour)?.count || 0;
-	};
-	const visitorsOnHour = (hour: number) => {
-		return data.visitor_count_by_hour.find((s) => s.hour === hour)?.count || 0;
-	};
+	for (let i = 0; i < 24; i++) {
+		if (!data.session_count_by_hour.find((s) => s.hour === i)) {
+			data.session_count_by_hour.push({ hour: i, count: 0 });
+		}
+		if (!data.visitor_count_by_hour.find((s) => s.hour === i)) {
+			data.visitor_count_by_hour.push({ hour: i, count: 0 });
+		}
+	}
+	data.session_count_by_hour.sort((a, b) => a.hour - b.hour);
+	data.visitor_count_by_hour.sort((a, b) => a.hour - b.hour);
 
-	const sessionsAndVisitorsByHourChartData = {
-		labels: new Array(24).fill(0).map((_, i) => i),
+	const sessionsAndVisitorsByHourChartData: CustomChartData<'radar'> = {
+		labels: data.session_count_by_hour.map((s) => s.hour.toString()),
 		datasets: [
 			{
 				label: 'Sessions Per Hour',
-				data: new Array(24).fill(null).map((_, i) => sessionsOnHour(i))
+				data: data.session_count_by_hour.map((s) => s.count)
 			},
 			{
 				label: 'Visitors Per Hour',
-				data: new Array(24).fill(null).map((_, i) => visitorsOnHour(i))
+				data: data.visitor_count_by_hour.map((s) => s.count)
 			}
 		]
 	};
 
-	const visitorsCountByBrowser = {
+	const visitorsCountByBrowser: CustomChartData<'doughnut'> = {
 		labels: data.visitor_count_by_browser.map((v) => v.browser),
 		datasets: [
 			{
@@ -89,8 +88,7 @@
 			}
 		]
 	};
-
-	const visitorsCountByOs = {
+	const visitorsCountByOs: CustomChartData<'doughnut'> = {
 		labels: data.visitor_count_by_os.map((v) => v.os),
 		datasets: [
 			{
@@ -98,8 +96,7 @@
 			}
 		]
 	};
-
-	const visitorsCountByDevice = {
+	const visitorsCountByDevice: CustomChartData<'doughnut'> = {
 		labels: data.visitor_count_by_device.map((v) => v.device),
 		datasets: [
 			{
@@ -107,128 +104,6 @@
 			}
 		]
 	};
-
-	onMount(async () => {
-		sessionsAndVisitorsChartCtx = sessionsAndVisitorsChart.getContext('2d')!;
-		new chartjs(sessionsAndVisitorsChartCtx, {
-			type: 'bar',
-			data: sessionsAndVisitorsChartData,
-			options: {
-				plugins: {
-					legend: {
-						labels: {
-							font: {
-								family: 'monospace'
-							}
-						}
-					},
-					title: {
-						display: true,
-						text: 'Sessions and Visitors Per Day'
-					},
-					autocolors
-				},
-				scales: {
-					y: {
-						beginAtZero: true
-					}
-				},
-				aspectRatio: 1
-			}
-		});
-
-		sessionsAndVisitorsByHourChartCtx = sessionsAndVisitorsByHourChart.getContext('2d')!;
-		new chartjs(sessionsAndVisitorsByHourChartCtx, {
-			type: 'radar',
-			data: sessionsAndVisitorsByHourChartData,
-			options: {
-				plugins: {
-					legend: {
-						labels: {
-							font: {
-								family: 'monospace'
-							}
-						}
-					},
-					title: {
-						display: true,
-						text: 'Sessions and Visitors Per Hour'
-					},
-					autocolors
-				},
-				aspectRatio: 1
-			}
-		});
-
-		visitorsCountByBrowserChartCtx = visitorsCountByBrowserChart.getContext('2d')!;
-		new chartjs(visitorsCountByBrowserChartCtx, {
-			type: 'doughnut',
-			data: visitorsCountByBrowser,
-			options: {
-				plugins: {
-					legend: {
-						labels: {
-							font: {
-								family: 'monospace'
-							}
-						}
-					},
-					title: {
-						display: true,
-						text: 'Visitors By Browser'
-					},
-					autocolors
-				},
-				aspectRatio: 1
-			}
-		});
-
-		visitorsCountByOsChartCtx = visitorsCountByOsChart.getContext('2d')!;
-		new chartjs(visitorsCountByOsChartCtx, {
-			type: 'doughnut',
-			data: visitorsCountByOs,
-			options: {
-				plugins: {
-					legend: {
-						labels: {
-							font: {
-								family: 'monospace'
-							}
-						}
-					},
-					title: {
-						display: true,
-						text: 'Visitors By OS'
-					},
-					autocolors
-				},
-				aspectRatio: 1
-			}
-		});
-
-		visitorsCountByDeviceChartCtx = visitorsCountByDeviceChart.getContext('2d')!;
-		new chartjs(visitorsCountByDeviceChartCtx, {
-			type: 'doughnut',
-			data: visitorsCountByDevice,
-			options: {
-				plugins: {
-					legend: {
-						labels: {
-							font: {
-								family: 'monospace'
-							}
-						}
-					},
-					title: {
-						display: true,
-						text: 'Visitors By Device'
-					},
-					autocolors
-				},
-				aspectRatio: 1
-			}
-		});
-	});
 
 	function copyTrackingId() {
 		navigator.clipboard.writeText($page.params.id);
@@ -253,19 +128,28 @@
 
 	<section class="stats">
 		<div>
-			<canvas bind:this={sessionsAndVisitorsChart} />
+			<Chart
+				title="Sessions and Visitors Per Day"
+				type="bar"
+				data={sessionsAndVisitorsChartData}
+				options={{ scales: { y: { beginAtZero: true } } }}
+			/>
 		</div>
 		<div>
-			<canvas bind:this={sessionsAndVisitorsByHourChart} />
+			<Chart
+				title="Sessions and Visitors Per Hour"
+				type="radar"
+				data={sessionsAndVisitorsByHourChartData}
+			/>
 		</div>
 		<div>
-			<canvas bind:this={visitorsCountByBrowserChart} />
+			<Chart title="Visitors By Browser" type="doughnut" data={visitorsCountByBrowser} />
 		</div>
 		<div>
-			<canvas bind:this={visitorsCountByOsChart} />
+			<Chart title="Visitors By OS" type="doughnut" data={visitorsCountByOs} />
 		</div>
 		<div>
-			<canvas bind:this={visitorsCountByDeviceChart} />
+			<Chart title="Visitors By Device" type="doughnut" data={visitorsCountByDevice} />
 		</div>
 	</section>
 </div>

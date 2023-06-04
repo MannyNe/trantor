@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { authState } from '$lib/auth';
-	import { createTracking } from '$lib/api';
-	import { invalidateAll } from '$app/navigation';
 	import { formatRelative } from 'date-fns';
 
 	import type { PageData } from './$types';
+	import { getAuthToken } from '$lib/auth';
+	import { invalidateAll } from '$app/navigation';
+
 	export let data: PageData;
 
 	async function handleCreateTracking(event: Event) {
@@ -12,15 +12,21 @@
 		const formData = new FormData(form);
 		const name = formData.get('name')! as string;
 
-		if (!$authState) {
-			return;
-		}
+		const authToken = getAuthToken();
+		if (!authToken) return;
 
-		await createTracking({
-			userId: $authState.userId,
-			secretCode: $authState.secretCode,
-			name
+		const res = await fetch('/admin/trackings', {
+			method: 'POST',
+			headers: {
+				Authorization: `Basic ${authToken}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ name })
 		});
+
+		if (!res.ok) {
+			alert('Something went wrong');
+		}
 
 		form.reset();
 		await invalidateAll();
@@ -29,7 +35,6 @@
 
 <svelte:head>
 	<title>Dashboard</title>
-	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 
 <h1 class="title">Trackings</h1>
