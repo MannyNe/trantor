@@ -1,10 +1,7 @@
 import z from 'zod';
 
 const countSchema = z.object({
-	count: z
-		.number()
-		.nullish()
-		.transform((v) => v || 0)
+	count: z.number()
 });
 const weekdayCountSchema = countSchema.extend({ weekday: z.number() });
 const hourCountSchema = countSchema.extend({ hour: z.number() });
@@ -26,7 +23,7 @@ export const TrackingDataSchema = z.object({
 	visitor_count_by_device: z.array(deviceCountSchema)
 });
 
-export const TrackingSchema = z.object({
+const TrackingSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	created_at: z.number().transform((v) => new Date(v)),
@@ -39,4 +36,14 @@ export const TrackingSchema = z.object({
 
 export const TrackingsSchema = z.object({
 	trackings: z.array(TrackingSchema)
+});
+
+const SourceSchema = z.object({
+	name: z.string(),
+	session_count: z.number(),
+	visitor_count: z.number()
+});
+
+export const SourcesSchema = z.object({
+	sources: z.array(SourceSchema)
 });

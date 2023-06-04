@@ -8,6 +8,7 @@
 	type CustomChartData<T extends ChartType> = ChartData<T, number[], string>;
 
 	export let data: PageData;
+	const trackings = data.trackings;
 
 	const weekdayToString: Record<number, string> = {
 		0: 'Sun',
@@ -20,76 +21,76 @@
 	};
 
 	for (let i = 0; i < 7; i++) {
-		if (!data.session_count_by_weekday.find((s) => s.weekday === i)) {
-			data.session_count_by_weekday.push({ weekday: i, count: 0 });
+		if (!trackings.session_count_by_weekday.find((s) => s.weekday === i)) {
+			trackings.session_count_by_weekday.push({ weekday: i, count: 0 });
 		}
-		if (!data.visitor_count_by_weekday.find((s) => s.weekday === i)) {
-			data.visitor_count_by_weekday.push({ weekday: i, count: 0 });
+		if (!trackings.visitor_count_by_weekday.find((s) => s.weekday === i)) {
+			trackings.visitor_count_by_weekday.push({ weekday: i, count: 0 });
 		}
 	}
-	data.session_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
-	data.visitor_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
+	trackings.session_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
+	trackings.visitor_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
 
 	const sessionsAndVisitorsChartData: CustomChartData<'bar'> = {
-		labels: data.session_count_by_weekday.map((s) => weekdayToString[s.weekday]),
+		labels: trackings.session_count_by_weekday.map((s) => weekdayToString[s.weekday]),
 		datasets: [
 			{
 				label: 'Sessions Per Day',
-				data: data.session_count_by_weekday.map((s) => s.count)
+				data: trackings.session_count_by_weekday.map((s) => s.count)
 			},
 			{
 				label: 'Visitors Per Day',
-				data: data.visitor_count_by_weekday.map((s) => s.count)
+				data: trackings.visitor_count_by_weekday.map((s) => s.count)
 			}
 		]
 	};
 
 	for (let i = 0; i < 24; i++) {
-		if (!data.session_count_by_hour.find((s) => s.hour === i)) {
-			data.session_count_by_hour.push({ hour: i, count: 0 });
+		if (!trackings.session_count_by_hour.find((s) => s.hour === i)) {
+			trackings.session_count_by_hour.push({ hour: i, count: 0 });
 		}
-		if (!data.visitor_count_by_hour.find((s) => s.hour === i)) {
-			data.visitor_count_by_hour.push({ hour: i, count: 0 });
+		if (!trackings.visitor_count_by_hour.find((s) => s.hour === i)) {
+			trackings.visitor_count_by_hour.push({ hour: i, count: 0 });
 		}
 	}
-	data.session_count_by_hour.sort((a, b) => a.hour - b.hour);
-	data.visitor_count_by_hour.sort((a, b) => a.hour - b.hour);
+	trackings.session_count_by_hour.sort((a, b) => a.hour - b.hour);
+	trackings.visitor_count_by_hour.sort((a, b) => a.hour - b.hour);
 
 	const sessionsAndVisitorsByHourChartData: CustomChartData<'radar'> = {
-		labels: data.session_count_by_hour.map((s) => s.hour.toString()),
+		labels: trackings.session_count_by_hour.map((s) => s.hour.toString()),
 		datasets: [
 			{
 				label: 'Sessions Per Hour',
-				data: data.session_count_by_hour.map((s) => s.count)
+				data: trackings.session_count_by_hour.map((s) => s.count)
 			},
 			{
 				label: 'Visitors Per Hour',
-				data: data.visitor_count_by_hour.map((s) => s.count)
+				data: trackings.visitor_count_by_hour.map((s) => s.count)
 			}
 		]
 	};
 
 	const visitorsCountByBrowser: CustomChartData<'doughnut'> = {
-		labels: data.visitor_count_by_browser.map((v) => v.browser),
+		labels: trackings.visitor_count_by_browser.map((v) => v.browser),
 		datasets: [
 			{
-				data: data.visitor_count_by_browser.map((v) => v.count)
+				data: trackings.visitor_count_by_browser.map((v) => v.count)
 			}
 		]
 	};
 	const visitorsCountByOs: CustomChartData<'doughnut'> = {
-		labels: data.visitor_count_by_os.map((v) => v.os),
+		labels: trackings.visitor_count_by_os.map((v) => v.os),
 		datasets: [
 			{
-				data: data.visitor_count_by_os.map((v) => v.count)
+				data: trackings.visitor_count_by_os.map((v) => v.count)
 			}
 		]
 	};
 	const visitorsCountByDevice: CustomChartData<'doughnut'> = {
-		labels: data.visitor_count_by_device.map((v) => v.device),
+		labels: trackings.visitor_count_by_device.map((v) => v.device),
 		datasets: [
 			{
-				data: data.visitor_count_by_device.map((v) => v.count)
+				data: trackings.visitor_count_by_device.map((v) => v.count)
 			}
 		]
 	};
@@ -100,12 +101,12 @@
 </script>
 
 <svelte:head>
-	<title>Tracking - {data.name}</title>
+	<title>Tracking - {trackings.name}</title>
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 
 <div class="app">
-	<h1>Tracking data for <span>{data.name}</span></h1>
+	<h1>Tracking data for <span>{trackings.name}</span></h1>
 
 	<div class="tracking-id">
 		<div>

@@ -2,9 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     db::{
-        NewTrackingData, NewUserData, SessionCountByHour, SessionCountByWeekday, SingleSource,
-        SingleTracking, SingleVisitor, VisitorCountByBrowser, VisitorCountByDevice,
-        VisitorCountByHour, VisitorCountByOs, VisitorCountByWeekday, DB,
+        CountByBrowser, CountByDevice, CountByHour, CountByOs, CountByWeekday, NewTrackingData,
+        NewUserData, SingleSource, SingleTracking, SingleVisitor, DB,
     },
     errors::DatabaseError,
 };
@@ -128,13 +127,15 @@ pub async fn list_trackings((db, user_id): (DB, i32)) -> Result<impl warp::Reply
 #[derive(Serialize)]
 pub struct TrackingResponse {
     name: String,
-    session_count_by_weekday: Vec<SessionCountByWeekday>,
-    visitor_count_by_weekday: Vec<VisitorCountByWeekday>,
-    session_count_by_hour: Vec<SessionCountByHour>,
-    visitor_count_by_hour: Vec<VisitorCountByHour>,
-    visitor_count_by_os: Vec<VisitorCountByOs>,
-    visitor_count_by_browser: Vec<VisitorCountByBrowser>,
-    visitor_count_by_device: Vec<VisitorCountByDevice>,
+    session_count_by_weekday: Vec<CountByWeekday>,
+    visitor_count_by_weekday: Vec<CountByWeekday>,
+
+    session_count_by_hour: Vec<CountByHour>,
+    visitor_count_by_hour: Vec<CountByHour>,
+
+    visitor_count_by_os: Vec<CountByOs>,
+    visitor_count_by_browser: Vec<CountByBrowser>,
+    visitor_count_by_device: Vec<CountByDevice>,
 }
 
 pub async fn get_tracking(db: DB, tracking_id: i32) -> Result<impl warp::Reply, warp::Rejection> {

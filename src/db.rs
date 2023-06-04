@@ -106,35 +106,35 @@ pub struct SingleVisitor {
 }
 
 #[derive(FromRow, Serialize)]
-pub struct VisitorCountByWeekday {
+pub struct CountByWeekday {
     #[serde(with = "big_decimal_to_u8")]
-    weekday: Option<BigDecimal>,
-    count: Option<i64>,
+    weekday: BigDecimal,
+    count: i64,
 }
 
 #[derive(FromRow, Serialize)]
-pub struct VisitorCountByHour {
+pub struct CountByHour {
     #[serde(with = "big_decimal_to_u8")]
-    hour: Option<BigDecimal>,
-    count: Option<i64>,
+    hour: BigDecimal,
+    count: i64,
 }
 
 #[derive(FromRow, Serialize)]
-pub struct VisitorCountByOs {
-    os: Option<String>,
-    count: Option<i64>,
+pub struct CountByOs {
+    os: String,
+    count: i64,
 }
 
 #[derive(FromRow, Serialize)]
-pub struct VisitorCountByDevice {
-    device: Option<String>,
-    count: Option<i64>,
+pub struct CountByDevice {
+    device: String,
+    count: i64,
 }
 
 #[derive(FromRow, Serialize)]
-pub struct VisitorCountByBrowser {
-    browser: Option<String>,
-    count: Option<i64>,
+pub struct CountByBrowser {
+    browser: String,
+    count: i64,
 }
 
 impl DB {
@@ -187,18 +187,15 @@ impl DB {
         Ok(visitors)
     }
 
-    pub async fn count_visitors_by_weekday(
-        &self,
-        tracking_id: i32,
-    ) -> Result<Vec<VisitorCountByWeekday>> {
+    pub async fn count_visitors_by_weekday(&self, tracking_id: i32) -> Result<Vec<CountByWeekday>> {
         let rec = sqlx::query_as!(
-            VisitorCountByWeekday,
+            CountByWeekday,
             r#"
-            SELECT COUNT(id) as count,
-                EXTRACT(DOW FROM created_at) as weekday
+            SELECT COUNT(id) as "count!",
+                EXTRACT(DOW FROM created_at) as "weekday!"
             FROM visitors
             WHERE tracking_id = $1
-            GROUP BY weekday
+            GROUP BY "weekday!"
         "#,
             tracking_id
         )
@@ -208,18 +205,15 @@ impl DB {
         Ok(rec)
     }
 
-    pub async fn count_visitors_by_hour(
-        &self,
-        tracking_id: i32,
-    ) -> Result<Vec<VisitorCountByHour>> {
+    pub async fn count_visitors_by_hour(&self, tracking_id: i32) -> Result<Vec<CountByHour>> {
         let rec = sqlx::query_as!(
-            VisitorCountByHour,
+            CountByHour,
             r#"
-            SELECT COUNT(id) as count,
-                EXTRACT(HOUR FROM created_at) as hour
+            SELECT COUNT(id) as "count!",
+                EXTRACT(HOUR FROM created_at) as "hour!"
             FROM visitors
             WHERE tracking_id = $1
-            GROUP BY hour
+            GROUP BY "hour!"
         "#,
             tracking_id
         )
@@ -229,15 +223,15 @@ impl DB {
         Ok(rec)
     }
 
-    pub async fn count_visitors_by_os(&self, tracking_id: i32) -> Result<Vec<VisitorCountByOs>> {
+    pub async fn count_visitors_by_os(&self, tracking_id: i32) -> Result<Vec<CountByOs>> {
         let rec = sqlx::query_as!(
-            VisitorCountByOs,
+            CountByOs,
             r#"
-            SELECT COUNT(id) as count,
-                user_agent_parsed->'os'->>'family' AS os
+            SELECT COUNT(id) as "count!",
+                user_agent_parsed->'os'->>'family' AS "os!"
             FROM visitors
             WHERE tracking_id = $1
-            GROUP BY os
+            GROUP BY "os!"
         "#,
             tracking_id
         )
@@ -247,18 +241,15 @@ impl DB {
         Ok(rec)
     }
 
-    pub async fn count_visitors_by_device(
-        &self,
-        tracking_id: i32,
-    ) -> Result<Vec<VisitorCountByDevice>> {
+    pub async fn count_visitors_by_device(&self, tracking_id: i32) -> Result<Vec<CountByDevice>> {
         let rec = sqlx::query_as!(
-            VisitorCountByDevice,
+            CountByDevice,
             r#"
-            SELECT COUNT(id) as count,
-                user_agent_parsed->'device'->>'family' AS device
+            SELECT COUNT(id) as "count!",
+                user_agent_parsed->'device'->>'family' AS "device!"
             FROM visitors
             WHERE tracking_id = $1
-            GROUP BY device
+            GROUP BY "device!"
         "#,
             tracking_id
         )
@@ -268,18 +259,15 @@ impl DB {
         Ok(rec)
     }
 
-    pub async fn count_visitors_by_browser(
-        &self,
-        tracking_id: i32,
-    ) -> Result<Vec<VisitorCountByBrowser>> {
+    pub async fn count_visitors_by_browser(&self, tracking_id: i32) -> Result<Vec<CountByBrowser>> {
         let rec = sqlx::query_as!(
-            VisitorCountByBrowser,
+            CountByBrowser,
             r#"
-            SELECT COUNT(id) as count,
-                user_agent_parsed->'user_agent'->>'family' AS browser
+            SELECT COUNT(id) as "count!",
+                user_agent_parsed->'user_agent'->>'family' AS "browser!"
             FROM visitors
             WHERE tracking_id = $1
-            GROUP BY browser
+            GROUP BY "browser!"
         "#,
             tracking_id
         )
@@ -337,20 +325,6 @@ pub struct SingleSession {
     start_latency: Option<PgInterval>,
     #[serde(with = "optional_pg_interval_format")]
     end_latency: Option<PgInterval>,
-}
-
-#[derive(FromRow, Serialize)]
-pub struct SessionCountByWeekday {
-    #[serde(with = "big_decimal_to_u8")]
-    weekday: Option<BigDecimal>,
-    count: Option<i64>,
-}
-
-#[derive(FromRow, Serialize)]
-pub struct SessionCountByHour {
-    #[serde(with = "big_decimal_to_u8")]
-    hour: Option<BigDecimal>,
-    count: Option<i64>,
 }
 
 impl DB {
@@ -436,18 +410,15 @@ impl DB {
         Ok(rec.count)
     }
 
-    pub async fn count_sessions_by_weekday(
-        &self,
-        tracking_id: i32,
-    ) -> Result<Vec<SessionCountByWeekday>> {
+    pub async fn count_sessions_by_weekday(&self, tracking_id: i32) -> Result<Vec<CountByWeekday>> {
         let rec = sqlx::query_as!(
-            SessionCountByWeekday,
+            CountByWeekday,
             r#"
-            SELECT COUNT(id) as count,
-                EXTRACT(DOW FROM start_timestamp) as weekday
+            SELECT COUNT(id) as "count!",
+                EXTRACT(DOW FROM start_timestamp) as "weekday!"
             FROM sessions
             WHERE tracking_id = $1
-            GROUP BY weekday
+            GROUP BY "weekday!"
         "#,
             tracking_id
         )
@@ -457,18 +428,15 @@ impl DB {
         Ok(rec)
     }
 
-    pub async fn count_sessions_by_hour(
-        &self,
-        tracking_id: i32,
-    ) -> Result<Vec<SessionCountByHour>> {
+    pub async fn count_sessions_by_hour(&self, tracking_id: i32) -> Result<Vec<CountByHour>> {
         let rec = sqlx::query_as!(
-            SessionCountByHour,
+            CountByHour,
             r#"
-            SELECT COUNT(id) as count,
-                EXTRACT(HOUR FROM start_timestamp) as hour
+            SELECT COUNT(id) as "count!",
+                EXTRACT(HOUR FROM start_timestamp) as "hour!"
             FROM sessions
             WHERE tracking_id = $1
-            GROUP BY hour
+            GROUP BY "hour!"
         "#,
             tracking_id
         )
@@ -740,16 +708,10 @@ mod big_decimal_to_u8 {
     use serde::{self, Serializer};
     use sqlx::types::BigDecimal;
 
-    pub fn serialize<S>(decimal: &Option<BigDecimal>, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn serialize<S>(decimal: &BigDecimal, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        match decimal {
-            Some(decimal) => match decimal.to_u8() {
-                Some(value) => serializer.serialize_u8(value),
-                None => serializer.serialize_none(),
-            },
-            None => serializer.serialize_none(),
-        }
+        serializer.serialize_u8(decimal.to_u8().unwrap())
     }
 }
