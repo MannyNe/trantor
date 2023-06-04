@@ -2,12 +2,21 @@
 	import { onMount } from 'svelte';
 
 	import Chart, { type ChartData, type ChartOptions, type ChartType } from 'chart.js/auto';
-	import autocolors from 'chartjs-plugin-autocolors';
 
 	export let title: string;
 	export let type: ChartType;
 	export let data: ChartData<typeof type>;
-	export let options: ChartOptions<typeof type> | {} = {};
+	let options: ChartOptions<typeof type> = {};
+
+	if (type === 'bar') {
+		options = {
+			scales: {
+				y: {
+					beginAtZero: true
+				}
+			}
+		};
+	}
 
 	let chart: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D;
@@ -31,8 +40,7 @@
 					title: {
 						display: true,
 						text: title
-					},
-					autocolors
+					}
 				},
 				aspectRatio: 1
 			}

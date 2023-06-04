@@ -9,7 +9,7 @@
 
 	export let data: PageData;
 	const tracking = data.tracking;
-	const sources = data.sources;
+	const sources = data.sources.sort((a, b) => b.session_count - a.session_count);
 	const paths = data.paths.sort((a, b) => b.count - a.count);
 
 	const weekdayToString: Record<number, string> = {
@@ -103,7 +103,7 @@
 </script>
 
 <svelte:head>
-	<title>Tracking - {tracking.name}</title>
+	<title>{tracking.name} | Tracking Data</title>
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 
@@ -120,17 +120,12 @@
 
 	<section class="stats">
 		<div>
-			<Chart
-				title="Sessions and Visitors Per Day"
-				type="bar"
-				data={sessionsAndVisitorsChartData}
-				options={{ scales: { y: { beginAtZero: true } } }}
-			/>
+			<Chart title="Sessions and Visitors Per Day" type="bar" data={sessionsAndVisitorsChartData} />
 		</div>
 		<div>
 			<Chart
-				title="Sessions and Visitors Per Hour"
 				type="radar"
+				title="Sessions and Visitors Per Hour"
 				data={sessionsAndVisitorsByHourChartData}
 			/>
 		</div>

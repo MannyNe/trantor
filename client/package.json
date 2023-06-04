@@ -36,7 +36,6 @@
 	"type": "module",
 	"dependencies": {
 		"chart.js": "^4.3.0",
-		"chartjs-plugin-autocolors": "^0.2.2",
 		"date-fns": "^2.30.0",
 		"zod": "^3.21.4"
 	}

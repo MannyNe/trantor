@@ -8,9 +8,6 @@ dependencies:
   chart.js:
     specifier: ^4.3.0
     version: 4.3.0
-  chartjs-plugin-autocolors:
-    specifier: ^0.2.2
-    version: 0.2.2(@kurkle/color@0.3.2)(chart.js@4.3.0)
   date-fns:
     specifier: ^2.30.0
     version: 2.30.0
@@ -753,16 +750,6 @@ packages:
     engines: {pnpm: '>=7'}
     dependencies:
       '@kurkle/color': 0.3.2
-    dev: false
-
-  /chartjs-plugin-autocolors@0.2.2(@kurkle/color@0.3.2)(chart.js@4.3.0):
-    resolution: {integrity: sha512-zKSivIHRL3yB6a47bcxOfIEOEByL+AMXTtcnscb7I3Vu4PGNCyPe4C+4XxLGvR52lMYgFYcMcYmaXksi1bbA+A==}
-    peerDependencies:
-      '@kurkle/color': ^0.3.1
-      chart.js: '>=2'
-    dependencies:
-      '@kurkle/color': 0.3.2
-      chart.js: 4.3.0
     dev: false
 
   /chokidar@3.5.3:
