@@ -8,7 +8,9 @@
 	type CustomChartData<T extends ChartType> = ChartData<T, number[], string>;
 
 	export let data: PageData;
-	const trackings = data.trackings;
+	const tracking = data.tracking;
+	const sources = data.sources;
+	const paths = data.paths.sort((a, b) => b.count - a.count);
 
 	const weekdayToString: Record<number, string> = {
 		0: 'Sun',
@@ -21,76 +23,76 @@
 	};
 
 	for (let i = 0; i < 7; i++) {
-		if (!trackings.session_count_by_weekday.find((s) => s.weekday === i)) {
-			trackings.session_count_by_weekday.push({ weekday: i, count: 0 });
+		if (!tracking.session_count_by_weekday.find((s) => s.weekday === i)) {
+			tracking.session_count_by_weekday.push({ weekday: i, count: 0 });
 		}
-		if (!trackings.visitor_count_by_weekday.find((s) => s.weekday === i)) {
-			trackings.visitor_count_by_weekday.push({ weekday: i, count: 0 });
+		if (!tracking.visitor_count_by_weekday.find((s) => s.weekday === i)) {
+			tracking.visitor_count_by_weekday.push({ weekday: i, count: 0 });
 		}
 	}
-	trackings.session_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
-	trackings.visitor_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
+	tracking.session_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
+	tracking.visitor_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
 
 	const sessionsAndVisitorsChartData: CustomChartData<'bar'> = {
-		labels: trackings.session_count_by_weekday.map((s) => weekdayToString[s.weekday]),
+		labels: tracking.session_count_by_weekday.map((s) => weekdayToString[s.weekday]),
 		datasets: [
 			{
 				label: 'Sessions Per Day',
-				data: trackings.session_count_by_weekday.map((s) => s.count)
+				data: tracking.session_count_by_weekday.map((s) => s.count)
 			},
 			{
 				label: 'Visitors Per Day',
-				data: trackings.visitor_count_by_weekday.map((s) => s.count)
+				data: tracking.visitor_count_by_weekday.map((s) => s.count)
 			}
 		]
 	};
 
 	for (let i = 0; i < 24; i++) {
-		if (!trackings.session_count_by_hour.find((s) => s.hour === i)) {
-			trackings.session_count_by_hour.push({ hour: i, count: 0 });
+		if (!tracking.session_count_by_hour.find((s) => s.hour === i)) {
+			tracking.session_count_by_hour.push({ hour: i, count: 0 });
 		}
-		if (!trackings.visitor_count_by_hour.find((s) => s.hour === i)) {
-			trackings.visitor_count_by_hour.push({ hour: i, count: 0 });
+		if (!tracking.visitor_count_by_hour.find((s) => s.hour === i)) {
+			tracking.visitor_count_by_hour.push({ hour: i, count: 0 });
 		}
 	}
-	trackings.session_count_by_hour.sort((a, b) => a.hour - b.hour);
-	trackings.visitor_count_by_hour.sort((a, b) => a.hour - b.hour);
+	tracking.session_count_by_hour.sort((a, b) => a.hour - b.hour);
+	tracking.visitor_count_by_hour.sort((a, b) => a.hour - b.hour);
 
 	const sessionsAndVisitorsByHourChartData: CustomChartData<'radar'> = {
-		labels: trackings.session_count_by_hour.map((s) => s.hour.toString()),
+		labels: tracking.session_count_by_hour.map((s) => s.hour.toString()),
 		datasets: [
 			{
 				label: 'Sessions Per Hour',
-				data: trackings.session_count_by_hour.map((s) => s.count)
+				data: tracking.session_count_by_hour.map((s) => s.count)
 			},
 			{
 				label: 'Visitors Per Hour',
-				data: trackings.visitor_count_by_hour.map((s) => s.count)
+				data: tracking.visitor_count_by_hour.map((s) => s.count)
 			}
 		]
 	};
 
 	const visitorsCountByBrowser: CustomChartData<'doughnut'> = {
-		labels: trackings.visitor_count_by_browser.map((v) => v.browser),
+		labels: tracking.visitor_count_by_browser.map((v) => v.browser),
 		datasets: [
 			{
-				data: trackings.visitor_count_by_browser.map((v) => v.count)
+				data: tracking.visitor_count_by_browser.map((v) => v.count)
 			}
 		]
 	};
 	const visitorsCountByOs: CustomChartData<'doughnut'> = {
-		labels: trackings.visitor_count_by_os.map((v) => v.os),
+		labels: tracking.visitor_count_by_os.map((v) => v.os),
 		datasets: [
 			{
-				data: trackings.visitor_count_by_os.map((v) => v.count)
+				data: tracking.visitor_count_by_os.map((v) => v.count)
 			}
 		]
 	};
 	const visitorsCountByDevice: CustomChartData<'doughnut'> = {
-		labels: trackings.visitor_count_by_device.map((v) => v.device),
+		labels: tracking.visitor_count_by_device.map((v) => v.device),
 		datasets: [
 			{
-				data: trackings.visitor_count_by_device.map((v) => v.count)
+				data: tracking.visitor_count_by_device.map((v) => v.count)
 			}
 		]
 	};
@@ -101,12 +103,12 @@
 </script>
 
 <svelte:head>
-	<title>Tracking - {trackings.name}</title>
+	<title>Tracking - {tracking.name}</title>
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 
 <div class="app">
-	<h1>Tracking data for <span>{trackings.name}</span></h1>
+	<h1>Tracking data for <span>{tracking.name}</span></h1>
 
 	<div class="tracking-id">
 		<div>
@@ -142,6 +144,44 @@
 			<Chart title="Visitors By Device" type="doughnut" data={visitorsCountByDevice} />
 		</div>
 	</section>
+
+	<div class="two-columns">
+		<section class="table-container">
+			<h1>Sources</h1>
+
+			<table>
+				<thead>
+					<th>Source Name</th>
+					<th>Session Count</th>
+					<th>Visitor Count</th>
+				</thead>
+				{#each sources as source}
+					<tr>
+						<td>{source.name}</td>
+						<td>{source.session_count}</td>
+						<td>{source.visitor_count}</td>
+					</tr>
+				{/each}
+			</table>
+		</section>
+
+		<section class="table-container">
+			<h1>Paths</h1>
+
+			<table>
+				<thead>
+					<th>Path</th>
+					<th>Session Count</th>
+				</thead>
+				{#each paths as path}
+					<tr>
+						<td>{path.pathname}</td>
+						<td>{path.count}</td>
+					</tr>
+				{/each}
+			</table>
+		</section>
+	</div>
 </div>
 
 <style>
@@ -175,6 +215,7 @@
 
 		margin-bottom: 2rem;
 		border: 1px solid #000;
+		box-shadow: 5px 6px rgba(0, 0, 0, 0.5);
 	}
 
 	.tracking-id div {
@@ -266,5 +307,65 @@
 		.stats {
 			padding: 0.5rem;
 		}
+	}
+
+	.two-columns {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 2rem;
+		margin-top: 2rem;
+	}
+
+	@media (max-width: 1100px) {
+		.two-columns {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.table-container {
+		padding: 1rem;
+		border: 2px solid #000;
+		box-shadow: 5px 6px rgba(0, 0, 0, 0.5);
+	}
+
+	.table-container h1 {
+		font-size: 1.5rem;
+		font-family: 'Press Start 2P', cursive;
+		margin-bottom: 1rem;
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+
+	th,
+	td {
+		border: 1px solid #000;
+		padding: 0.5rem;
+	}
+
+	th {
+		text-align: left;
+		font-size: 0.8rem;
+		font-family: monospace;
+	}
+
+	td,
+	th {
+		font-family: monospace;
+	}
+
+	thead {
+		background-color: #000;
+		color: #fff;
+	}
+
+	th:nth-child(2),
+	th:nth-child(3),
+	td:nth-child(2),
+	td:nth-child(3) {
+		text-align: right;
+		font-weight: bolder;
 	}
 </style>

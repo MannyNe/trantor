@@ -8,6 +8,7 @@ const hourCountSchema = countSchema.extend({ hour: z.number() });
 const osCountSchema = countSchema.extend({ os: z.string() });
 const browserCountSchema = countSchema.extend({ browser: z.string() });
 const deviceCountSchema = countSchema.extend({ device: z.string() });
+const pathCountSchema = countSchema.extend({ pathname: z.string() });
 
 export const TrackingDataSchema = z.object({
 	name: z.string(),
@@ -46,4 +47,8 @@ const SourceSchema = z.object({
 
 export const SourcesSchema = z.object({
 	sources: z.array(SourceSchema)
+});
+
+export const CountPathsSchema = z.object({
+	paths: z.array(pathCountSchema)
 });

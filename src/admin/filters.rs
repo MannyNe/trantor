@@ -73,6 +73,14 @@ pub fn make_admin_routes(
         .and_then(user_id_owns_tracking)
         .and_then(|(db, tracking_id)| handlers::list_sources(db, tracking_id));
 
+    let count_paths = warp::get()
+        .and(with_db(db.clone()))
+        .and(extract_basic_token())
+        .and_then(authenticate_filter)
+        .and(warp::path!("trackings" / String / "paths"))
+        .and_then(user_id_owns_tracking)
+        .and_then(|(db, tracking_id)| handlers::count_paths(db, tracking_id));
+
     let create_source = warp::post()
         .and(with_db(db.clone()))
         .and(extract_basic_token())
@@ -95,6 +103,7 @@ pub fn make_admin_routes(
             .or(list_sources)
             .or(list_sessions)
             .or(list_trackings)
+            .or(count_paths)
             .or(create_tracking)
             .or(get_tracking)
             .or(create_user)

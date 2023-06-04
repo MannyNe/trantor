@@ -137,6 +137,12 @@ pub struct CountByBrowser {
     count: i64,
 }
 
+#[derive(FromRow, Serialize)]
+pub struct CountByPathname {
+    pathname: String,
+    count: i64,
+}
+
 impl DB {
     pub async fn create_visitor(&self, data: &NewVisitorData) -> Result<i32> {
         let rec = sqlx::query!(
@@ -437,6 +443,27 @@ impl DB {
             FROM sessions
             WHERE tracking_id = $1
             GROUP BY "hour!"
+        "#,
+            tracking_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn count_sessions_by_pathname(
+        &self,
+        tracking_id: i32,
+    ) -> Result<Vec<CountByPathname>> {
+        let rec = sqlx::query_as!(
+            CountByPathname,
+            r#"
+            SELECT COUNT(id) as "count!",
+                pathname
+            FROM sessions
+            WHERE tracking_id = $1
+            GROUP BY pathname
         "#,
             tracking_id
         )

@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     db::{
-        CountByBrowser, CountByDevice, CountByHour, CountByOs, CountByWeekday, NewTrackingData,
-        NewUserData, SingleSource, SingleTracking, SingleVisitor, DB,
+        CountByBrowser, CountByDevice, CountByHour, CountByOs, CountByPathname, CountByWeekday,
+        NewTrackingData, NewUserData, SingleSource, SingleTracking, SingleVisitor, DB,
     },
     errors::DatabaseError,
 };
@@ -241,4 +241,23 @@ pub async fn list_sources(db: DB, tracking_id: i32) -> Result<impl warp::Reply, 
     sources.push(visitors_without_source);
 
     Ok(warp::reply::json(&ListSourcesResponse { sources }))
+}
+
+#[derive(Serialize)]
+struct ListPathsResponse {
+    paths: Vec<CountByPathname>,
+}
+
+pub async fn count_paths(db: DB, tracking_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Counting paths");
+
+    let paths = db
+        .count_sessions_by_pathname(tracking_id)
+        .await
+        .map_err(|e| {
+            log::error!("Error counting paths: {}", e);
+            warp::reject::custom(DatabaseError)
+        })?;
+
+    Ok(warp::reply::json(&ListPathsResponse { paths }))
 }
