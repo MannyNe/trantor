@@ -9,25 +9,14 @@
 
 	export let data: PageData;
 
-	const weekdayToString = (weekday: number) => {
-		switch (weekday) {
-			case 0:
-				return 'Sunday';
-			case 1:
-				return 'Monday';
-			case 2:
-				return 'Tuesday';
-			case 3:
-				return 'Wednesday';
-			case 4:
-				return 'Thursday';
-			case 5:
-				return 'Friday';
-			case 6:
-				return 'Saturday';
-			default:
-				return '';
-		}
+	const weekdayToString: Record<number, string> = {
+		0: 'Sun',
+		1: 'Mon',
+		2: 'Tue',
+		3: 'Wed',
+		4: 'Thu',
+		5: 'Fri',
+		6: 'Sat'
 	};
 
 	for (let i = 0; i < 7; i++) {
@@ -42,7 +31,7 @@
 	data.visitor_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
 
 	const sessionsAndVisitorsChartData: CustomChartData<'bar'> = {
-		labels: data.session_count_by_weekday.map((s) => weekdayToString(s.weekday)),
+		labels: data.session_count_by_weekday.map((s) => weekdayToString[s.weekday]),
 		datasets: [
 			{
 				label: 'Sessions Per Day',

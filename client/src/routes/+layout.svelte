@@ -34,7 +34,7 @@
 	}
 
 	img {
-		width: 50px;
+		width: 30px;
 	}
 
 	h1 {
@@ -44,7 +44,7 @@
 
 	section {
 		display: grid;
-		grid-template-rows: 100px 1fr;
+		grid-template-rows: auto 1fr;
 		min-height: 100vh;
 	}
 

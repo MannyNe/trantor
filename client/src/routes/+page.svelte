@@ -31,6 +31,8 @@
 		form.reset();
 		await invalidateAll();
 	}
+
+	const now = new Date();
 </script>
 
 <svelte:head>
@@ -51,7 +53,7 @@
 		{#each data.trackings as tracking}
 			<a href={`/trackings/${tracking.id}`} class="card">
 				<h1>{tracking.name}</h1>
-				<time>{formatRelative(new Date(tracking.created_at), new Date())}</time>
+				<time>{formatRelative(tracking.created_at, now)}</time>
 
 				<div class="stats">
 					<div>
@@ -82,7 +84,9 @@
 <style>
 	time {
 		font-family: monospace;
+		text-transform: lowercase;
 	}
+
 	a {
 		text-decoration: none;
 		color: inherit;
