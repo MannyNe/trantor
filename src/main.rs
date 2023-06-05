@@ -1,5 +1,6 @@
-use std::env;
+use std::{env, path::Path};
 
+use include_dir::{include_dir, Dir};
 use sqlx::PgPool;
 use uaparser::UserAgentParser;
 use warp::Filter;
@@ -41,14 +42,54 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ])
         .allow_credentials(true);
 
+    let fronted_routes = warp::path::tail().and_then(send_file_from_embedded_dir);
+    let index_page = warp::any().and_then(index_from_embedded_dir);
+
     let routes = admin_routes
         .or(session_routes)
-        .or(warp::fs::dir("client/build"))
-        .or(warp::any().and(warp::fs::file("client/build/index.html")))
+        .or(fronted_routes)
+        .or(index_page)
         .recover(errors::handle_rejection)
         .with(cors);
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 
     Ok(())
+}
+
+static FRONTEND_BUILD_DIR: Dir = include_dir!("client/build");
+
+async fn send_file_from_embedded_dir(
+    path: warp::path::Tail,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    let path = Path::new(path.as_str());
+    let file = FRONTEND_BUILD_DIR
+        .get_file(path)
+        .ok_or_else(warp::reject::not_found)?;
+
+    let content_type = match file.path().extension() {
+        Some(ext) if ext == "html" => "text/html",
+        Some(ext) if ext == "js" => "text/javascript",
+        Some(ext) if ext == "css" => "text/css",
+        Some(ext) if ext == "png" => "image/png",
+        Some(ext) if ext == "svg" => "image/svg+xml",
+        Some(ext) if ext == "json" => "application/json",
+        Some(ext) if ext == "txt" => "text/plain",
+        _ => "application/octet-stream",
+    };
+
+    Ok(warp::reply::with_header(
+        file.contents(),
+        "content-type",
+        content_type,
+    ))
+}
+
+async fn index_from_embedded_dir() -> Result<impl warp::Reply, warp::Rejection> {
+    Ok(warp::reply::html(
+        FRONTEND_BUILD_DIR
+            .get_file("index.html")
+            .unwrap()
+            .contents(),
+    ))
 }
