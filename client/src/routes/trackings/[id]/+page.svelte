@@ -206,17 +206,11 @@
 						<td>
 							{#if source.name !== 'direct'}
 								<button on:click={() => deleteSource(source.name)}>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke-width="1.5"
-										stroke="currentColor"
-									>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
 										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+											fill-rule="evenodd"
+											d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z"
+											clip-rule="evenodd"
 										/>
 									</svg>
 								</button>
@@ -225,6 +219,19 @@
 					</tr>
 				{/each}
 			</table>
+			<div class="info">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+					<path
+						fill-rule="evenodd"
+						d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z"
+						clip-rule="evenodd"
+					/>
+				</svg>
+
+				<p>
+					Add <span>?src=source_name</span> to the end of yor referer URL to specify the source.
+				</p>
+			</div>
 		</section>
 
 		<section class="table-container">
@@ -508,5 +515,24 @@
 
 	.add-source button:active {
 		transform: scale(0.9);
+	}
+
+	.info {
+		display: flex;
+		align-items: center;
+		gap: 0.2rem;
+		margin-top: 1rem;
+		font-family: monospace;
+	}
+
+	.info svg {
+		width: 1.5rem;
+		height: 1.5rem;
+	}
+
+	.info span {
+		padding: 0.2rem;
+		color: white;
+		background-color: black;
 	}
 </style>
