@@ -96,6 +96,15 @@
 		]
 	};
 
+	const sessionsCountBySource: CustomChartData<'doughnut'> = {
+		labels: data.sources.map((v) => v.name),
+		datasets: [
+			{
+				data: data.sources.map((v) => v.session_count)
+			}
+		]
+	};
+
 	function copyTrackingId() {
 		navigator.clipboard.writeText($page.params.id);
 	}
@@ -180,6 +189,9 @@
 		</div>
 		<div>
 			<Chart title="Visitors By Device" type="doughnut" data={visitorsCountByDevice} />
+		</div>
+		<div>
+			<Chart title="Sessions By Source" type="doughnut" data={sessionsCountBySource} />
 		</div>
 	</section>
 
