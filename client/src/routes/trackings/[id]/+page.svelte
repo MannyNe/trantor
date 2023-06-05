@@ -146,7 +146,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.tracking.name} | Tracking Data</title>
+	<title>{data.tracking.name} | Trantor</title>
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 

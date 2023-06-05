@@ -34,6 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "Origin",
             "Content-Type",
             "x-tracking-id",
+            "x-source-name",
             "Authorization",
             "Content-Length",
             "Access-Control-Allow-Origin",

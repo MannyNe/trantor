@@ -24,7 +24,7 @@
 </script>
 
 <svelte:head>
-	<title>Login</title>
+	<title>Login | Trantor</title>
 </svelte:head>
 
 <section>

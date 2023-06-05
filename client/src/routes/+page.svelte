@@ -36,7 +36,7 @@
 </script>
 
 <svelte:head>
-	<title>Dashboard</title>
+	<title>Dashboard | Trantor</title>
 </svelte:head>
 
 <h1 class="title">Trackings</h1>
