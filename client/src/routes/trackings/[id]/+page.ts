@@ -1,22 +1,9 @@
 import type { PageLoad } from './$types';
 import { getAuthToken } from '$lib/auth';
-import {
-	CountPathsSchema,
-	CountTitlesSchema,
-	SourcesSchema,
-	TrackingDataSchema
-} from '$lib/schema';
+import { SourcesSchema, CountPathsSchema, CountTitlesSchema } from '$lib/schema';
 
 export const load = (async ({ params, fetch }) => {
 	const authToken = getAuthToken();
-
-	const trackingRes = await fetch(`/admin/trackings/${params.id}`, {
-		headers: {
-			Authorization: `Basic ${authToken}`
-		}
-	});
-	const trackingData = await trackingRes.json();
-	const tracking = TrackingDataSchema.parse(trackingData);
 
 	const sourcesRes = await fetch(`/admin/trackings/${params.id}/sources`, {
 		headers: {
@@ -43,7 +30,6 @@ export const load = (async ({ params, fetch }) => {
 	const { titles } = CountTitlesSchema.parse(titlesData);
 
 	return {
-		tracking,
 		sources,
 		paths,
 		titles

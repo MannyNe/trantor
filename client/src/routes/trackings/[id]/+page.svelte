@@ -1,114 +1,10 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { ChartData, ChartType } from 'chart.js/auto';
-
 	import { page } from '$app/stores';
 	import { getAuthToken } from '$lib/auth';
 	import { invalidateAll } from '$app/navigation';
-	import Tabs from '$lib/components/Tabs.svelte';
-	import Chart from '$lib/components/Chart.svelte';
-
-	type CustomChartData<T extends ChartType> = ChartData<T, number[], string>;
 
 	export let data: PageData;
-
-	const weekdayToString: Record<number, string> = {
-		0: 'Sun',
-		1: 'Mon',
-		2: 'Tue',
-		3: 'Wed',
-		4: 'Thu',
-		5: 'Fri',
-		6: 'Sat'
-	};
-
-	for (let i = 0; i < 7; i++) {
-		if (!data.tracking.session_count_by_weekday.find((s) => s.weekday === i)) {
-			data.tracking.session_count_by_weekday.push({ weekday: i, count: 0 });
-		}
-		if (!data.tracking.visitor_count_by_weekday.find((s) => s.weekday === i)) {
-			data.tracking.visitor_count_by_weekday.push({ weekday: i, count: 0 });
-		}
-	}
-	data.tracking.session_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
-	data.tracking.visitor_count_by_weekday.sort((a, b) => a.weekday - b.weekday);
-
-	const sessionsAndVisitorsChartData: CustomChartData<'bar'> = {
-		labels: data.tracking.session_count_by_weekday.map((s) => weekdayToString[s.weekday]),
-		datasets: [
-			{
-				label: 'Sessions Per Day',
-				data: data.tracking.session_count_by_weekday.map((s) => s.count)
-			},
-			{
-				label: 'Visitors Per Day',
-				data: data.tracking.visitor_count_by_weekday.map((s) => s.count)
-			}
-		]
-	};
-
-	for (let i = 0; i < 24; i++) {
-		if (!data.tracking.session_count_by_hour.find((s) => s.hour === i)) {
-			data.tracking.session_count_by_hour.push({ hour: i, count: 0 });
-		}
-		if (!data.tracking.visitor_count_by_hour.find((s) => s.hour === i)) {
-			data.tracking.visitor_count_by_hour.push({ hour: i, count: 0 });
-		}
-	}
-	data.tracking.session_count_by_hour.sort((a, b) => a.hour - b.hour);
-	data.tracking.visitor_count_by_hour.sort((a, b) => a.hour - b.hour);
-
-	const sessionsAndVisitorsByHourChartData: CustomChartData<'radar'> = {
-		labels: data.tracking.session_count_by_hour.map((s) => s.hour.toString()),
-		datasets: [
-			{
-				label: 'Sessions Per Hour',
-				data: data.tracking.session_count_by_hour.map((s) => s.count)
-			},
-			{
-				label: 'Visitors Per Hour',
-				data: data.tracking.visitor_count_by_hour.map((s) => s.count)
-			}
-		]
-	};
-
-	const visitorsCountByBrowser: CustomChartData<'doughnut'> = {
-		labels: data.tracking.visitor_count_by_browser.map((v) => v.browser),
-		datasets: [
-			{
-				data: data.tracking.visitor_count_by_browser.map((v) => v.count)
-			}
-		]
-	};
-	const visitorsCountByOs: CustomChartData<'doughnut'> = {
-		labels: data.tracking.visitor_count_by_os.map((v) => v.os),
-		datasets: [
-			{
-				data: data.tracking.visitor_count_by_os.map((v) => v.count)
-			}
-		]
-	};
-	const visitorsCountByDevice: CustomChartData<'doughnut'> = {
-		labels: data.tracking.visitor_count_by_device.map((v) => v.device),
-		datasets: [
-			{
-				data: data.tracking.visitor_count_by_device.map((v) => v.count)
-			}
-		]
-	};
-
-	const sessionsCountBySource: CustomChartData<'doughnut'> = {
-		labels: data.sources.map((v) => v.name),
-		datasets: [
-			{
-				data: data.sources.map((v) => v.session_count)
-			}
-		]
-	};
-
-	function copyTrackingId() {
-		navigator.clipboard.writeText($page.params.id);
-	}
 
 	async function handleAddSource(event: Event) {
 		const form = event.target as HTMLFormElement;
@@ -155,298 +51,95 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{data.tracking.name} | Trantor</title>
-	<meta name="description" content="Svelte demo app" />
-</svelte:head>
+<div class="two-columns">
+	<section class="table-container">
+		<h1>Sources</h1>
 
-<div class="app">
-	<h1>Tracking data for <span>{data.tracking.name}</span></h1>
+		<form class="add-source" on:submit|preventDefault={handleAddSource}>
+			<input required name="name" placeholder="Name" type="text" autocomplete="off" />
+			<button type="submit">Add Source</button>
+		</form>
+		<table>
+			<thead>
+				<th>Source Name</th>
+				<th>Session Count</th>
+				<th>Visitor Count</th>
+				<th style="border-right: 1px solid #000;" />
+			</thead>
+			{#each data.sources as source}
+				<tr>
+					<td>{source.name}</td>
+					<td>{source.session_count}</td>
+					<td>{source.visitor_count}</td>
+					<td>
+						{#if source.name !== 'direct'}
+							<button on:click={() => deleteSource(source.name)}>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+									<path
+										fill-rule="evenodd"
+										d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z"
+										clip-rule="evenodd"
+									/>
+								</svg>
+							</button>
+						{/if}
+					</td>
+				</tr>
+			{/each}
+		</table>
+		<div class="info">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+				<path
+					fill-rule="evenodd"
+					d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z"
+					clip-rule="evenodd"
+				/>
+			</svg>
 
-	<div class="tracking-id">
-		<div>
-			<p>Tracking ID</p>
-			<h3>{$page.params.id}</h3>
-		</div>
-		<button on:click={copyTrackingId}>Copy</button>
-	</div>
-
-	<section class="stats">
-		<div>
-			<Chart title="Sessions and Visitors Per Day" type="bar" data={sessionsAndVisitorsChartData} />
-		</div>
-		<div>
-			<Chart
-				type="radar"
-				title="Sessions and Visitors Per Hour"
-				data={sessionsAndVisitorsByHourChartData}
-			/>
-		</div>
-		<div>
-			<Chart title="Visitors By Browser" type="doughnut" data={visitorsCountByBrowser} />
-		</div>
-		<div>
-			<Chart title="Visitors By OS" type="doughnut" data={visitorsCountByOs} />
-		</div>
-		<div>
-			<Chart title="Visitors By Device" type="doughnut" data={visitorsCountByDevice} />
-		</div>
-		<div>
-			<Chart title="Sessions By Source" type="doughnut" data={sessionsCountBySource} />
+			<p>
+				Add <span>?src=source_name</span> to the end of yor referer URL to specify the source.
+			</p>
 		</div>
 	</section>
 
-	<section class="tab-container">
-		<header>
-			<Tabs
-				tabs={[
-					{
-						icon: { emoji: '📈', label: 'chart icon' },
-						name: 'Stats',
-						path: '/trackings/[id]/',
-						active: true
-					},
-					{
-						icon: { emoji: '⚙️', label: 'gear icon' },
-						name: 'Settings',
-						path: '/trackings/[id]/settings',
-						active: false
-					}
-				]}
-			/>
-		</header>
+	<section class="table-container">
+		<h1>Paths</h1>
 
-		<main>
-			<div class="two-columns">
-				<section class="table-container">
-					<h1>Sources</h1>
+		<table>
+			<thead>
+				<th>Path</th>
+				<th style="border-right: 1px solid #000;">Session Count</th>
+			</thead>
+			{#each data.paths as path}
+				<tr>
+					<td>{path.pathname}</td>
+					<td>{path.count}</td>
+				</tr>
+			{/each}
+		</table>
+	</section>
+</div>
 
-					<form class="add-source" on:submit|preventDefault={handleAddSource}>
-						<input required name="name" placeholder="Name" type="text" autocomplete="off" />
-						<button type="submit">Add Source</button>
-					</form>
-					<table>
-						<thead>
-							<th>Source Name</th>
-							<th>Session Count</th>
-							<th>Visitor Count</th>
-							<th style="border-right: 1px solid #000;" />
-						</thead>
-						{#each data.sources as source}
-							<tr>
-								<td>{source.name}</td>
-								<td>{source.session_count}</td>
-								<td>{source.visitor_count}</td>
-								<td>
-									{#if source.name !== 'direct'}
-										<button on:click={() => deleteSource(source.name)}>
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												viewBox="0 0 24 24"
-												fill="currentColor"
-											>
-												<path
-													fill-rule="evenodd"
-													d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z"
-													clip-rule="evenodd"
-												/>
-											</svg>
-										</button>
-									{/if}
-								</td>
-							</tr>
-						{/each}
-					</table>
-					<div class="info">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-							<path
-								fill-rule="evenodd"
-								d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z"
-								clip-rule="evenodd"
-							/>
-						</svg>
+<div class="two-columns">
+	<section class="table-container">
+		<h1>Page Titles</h1>
 
-						<p>
-							Add <span>?src=source_name</span> to the end of yor referer URL to specify the source.
-						</p>
-					</div>
-				</section>
-
-				<section class="table-container">
-					<h1>Paths</h1>
-
-					<table>
-						<thead>
-							<th>Path</th>
-							<th style="border-right: 1px solid #000;">Session Count</th>
-						</thead>
-						{#each data.paths as path}
-							<tr>
-								<td>{path.pathname}</td>
-								<td>{path.count}</td>
-							</tr>
-						{/each}
-					</table>
-				</section>
-			</div>
-
-			<div class="two-columns">
-				<section class="table-container">
-					<h1>Page Titles</h1>
-
-					<table>
-						<thead>
-							<th>Title</th>
-							<th style="border-right: 1px solid #000;">Session Count</th>
-						</thead>
-						{#each data.titles as title}
-							<tr>
-								<td>{title.title}</td>
-								<td>{title.count}</td>
-							</tr>
-						{/each}
-					</table>
-				</section>
-			</div>
-		</main>
+		<table>
+			<thead>
+				<th>Title</th>
+				<th style="border-right: 1px solid #000;">Session Count</th>
+			</thead>
+			{#each data.titles as title}
+				<tr>
+					<td>{title.title}</td>
+					<td>{title.count}</td>
+				</tr>
+			{/each}
+		</table>
 	</section>
 </div>
 
 <style>
-	.app {
-		width: 80vw;
-		margin: 1rem auto;
-	}
-
-	.app h1 {
-		font-size: 2rem;
-		margin-bottom: 2rem;
-		font-family: 'Press Start 2P', cursive;
-		line-height: 3rem;
-	}
-
-	.app h1 span {
-		padding: 0.5rem 1rem;
-		background-color: black;
-		color: white;
-	}
-
-	.tracking-id {
-		background-color: black;
-		color: white;
-
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-
-		width: fit-content;
-
-		margin-bottom: 2rem;
-		border: 1px solid #000;
-		box-shadow: 5px 6px rgba(0, 0, 0, 0.5);
-	}
-
-	.tracking-id div {
-		padding: 0.5rem 1rem;
-	}
-
-	.tracking-id h3 {
-		font-size: 1.5rem;
-		font-family: 'Press Start 2P', cursive;
-	}
-
-	.tracking-id p {
-		font-family: monospace;
-		margin-bottom: 10px;
-	}
-
-	.tracking-id button {
-		height: 100%;
-		font-family: monospace;
-		padding: 1.4rem 1rem;
-		background-color: blueviolet;
-		border: none;
-		color: white;
-		text-transform: uppercase;
-		border-left: 1px solid #fff;
-
-		font-size: 1rem;
-		font-weight: bold;
-		cursor: pointer;
-	}
-
-	.tracking-id button:hover,
-	.tracking-id button:focus {
-		background-color: #fff;
-		color: blueviolet;
-	}
-
-	.tracking-id button:active {
-		transform: scale(0.9);
-	}
-
-	.stats {
-		padding: 1rem;
-		display: flex;
-		overflow-x: scroll;
-		border: 2px solid #000;
-		box-shadow: 5px 6px rgba(0, 0, 0, 0.5);
-	}
-
-	/* style stats scroll bar */
-	.stats::-webkit-scrollbar {
-		height: 5px;
-	}
-	.stats::-webkit-scrollbar-track {
-		background: transparent;
-	}
-	.stats::-webkit-scrollbar-thumb {
-		background: #000;
-	}
-
-	.stats > div {
-		width: 400px;
-		height: 400px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	@media (max-width: 810px) {
-		.app {
-			width: 90vw;
-		}
-
-		.app h1 {
-			font-size: 1.5rem;
-		}
-
-		.tracking-id h3 {
-			font-size: 0.6rem;
-		}
-	}
-
-	@media (max-width: 500px) {
-		.app {
-			width: 100vw;
-			padding: 1rem;
-		}
-
-		.stats {
-			padding: 0.5rem;
-		}
-	}
-
-	.tab-container {
-		border: 2px solid #000;
-		box-shadow: 5px 6px rgba(0, 0, 0, 0.5);
-		margin-top: 2rem;
-	}
-
-	.tab-container main {
-		padding: 1rem;
-	}
-
 	.two-columns {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
