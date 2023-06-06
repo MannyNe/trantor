@@ -153,6 +153,31 @@ pub async fn get_tracking(db: DB, tracking_id: i32) -> Result<impl warp::Reply, 
     }))
 }
 
+#[derive(Deserialize)]
+pub struct RenameTrackingRequest {
+    name: String,
+}
+
+pub async fn rename_tracking(
+    db: DB,
+    tracking_id: i32,
+    req: RenameTrackingRequest,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Renaming tracking: {}", tracking_id);
+
+    db.rename_tracking(tracking_id, &req.name)
+        .await
+        .map_err(|e| {
+            log::error!("Error renaming tracking: {}", e);
+            warp::reject::custom(DatabaseError)
+        })?;
+
+    Ok(warp::reply::with_status(
+        warp::reply(),
+        warp::http::StatusCode::NO_CONTENT,
+    ))
+}
+
 pub async fn delete_tracking(
     db: DB,
     tracking_id: i32,
@@ -169,6 +194,7 @@ pub async fn delete_tracking(
         warp::http::StatusCode::NO_CONTENT,
     ))
 }
+
 // Source Routes
 
 #[derive(Deserialize)]

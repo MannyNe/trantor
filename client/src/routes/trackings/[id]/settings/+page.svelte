@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { getAuthToken } from '$lib/auth';
 
@@ -22,10 +22,45 @@
 
 		await goto('/');
 	}
+
+	async function renameTracking(e: Event) {
+		const form = e.target as HTMLFormElement;
+		const formData = new FormData(form);
+		const name = formData.get('name') as string;
+
+		const authToken = getAuthToken();
+
+		const res = await fetch(`/admin/trackings/${$page.params.id}/name`, {
+			method: 'PATCH',
+			headers: {
+				Authorization: `Basic ${authToken}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ name })
+		});
+
+		if (res.status !== 204) {
+			alert('Something went wrong');
+		}
+
+		form.reset();
+		await invalidateAll();
+	}
 </script>
 
 <h1>Settings Page</h1>
 <button on:click={deleteTracking}>DELETE TRACKING</button>
+<form on:submit|preventDefault={renameTracking}>
+	<input
+		type="text"
+		name="name"
+		id="name"
+		placeholder="Name"
+		autocomplete="off"
+		value={$page.data.tracking.name}
+	/>
+	<button type="submit">Rename Tracking</button>
+</form>
 
 <style>
 	h1 {
@@ -50,6 +85,34 @@
 
 	button:active {
 		background-color: #ff6666;
+		transform: scale(0.9);
+	}
+
+	form {
+		width: 100%;
+		max-width: 500px;
+		display: grid;
+		grid-template-columns: 1fr auto;
+		margin-top: 0.5rem;
+	}
+
+	form input {
+		background-color: transparent;
+		border: 1px solid #000;
+		padding: 0.5rem;
+	}
+
+	form button {
+		background-color: #000;
+	}
+
+	form button:hover,
+	form button:focus {
+		background-color: #333;
+	}
+
+	form button:active {
+		background-color: #666;
 		transform: scale(0.9);
 	}
 </style>

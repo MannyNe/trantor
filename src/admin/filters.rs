@@ -1,6 +1,8 @@
 use warp::Filter;
 
-use super::{handlers, CreateSourceRequest, CreateTrackingRequest, CreateUserRequest};
+use super::{
+    handlers, CreateSourceRequest, CreateTrackingRequest, CreateUserRequest, RenameTrackingRequest,
+};
 use crate::{
     db::{with_db, DB},
     middleware::{authenticate_filter, extract_basic_token, user_id_owns_tracking},
@@ -43,6 +45,14 @@ pub fn make_admin_routes(
         .and(warp::path!("trackings" / String))
         .and_then(user_id_owns_tracking)
         .and_then(|(db, tracking_id)| handlers::get_tracking(db, tracking_id));
+    let patch_tracking_name = warp::patch()
+        .and(with_db(db.clone()))
+        .and(extract_basic_token())
+        .and_then(authenticate_filter)
+        .and(warp::path!("trackings" / String / "name"))
+        .and_then(user_id_owns_tracking)
+        .and(warp::body::json::<RenameTrackingRequest>())
+        .and_then(|(db, tracking_id), req| handlers::rename_tracking(db, tracking_id, req));
     let delete_tracking = warp::delete()
         .and(with_db(db.clone()))
         .and(extract_basic_token())
@@ -101,6 +111,7 @@ pub fn make_admin_routes(
             .or(create_tracking)
             .or(list_trackings)
             .or(get_tracking)
+            .or(patch_tracking_name)
             .or(delete_tracking)
             .or(create_source)
             .or(list_sources)

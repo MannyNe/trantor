@@ -643,6 +643,18 @@ impl DB {
 
         Ok(())
     }
+
+    pub async fn rename_tracking(&self, tracking_id: i32, name: &str) -> Result<()> {
+        sqlx::query!(
+            r#"UPDATE trackings SET name = $1 WHERE id = $2"#,
+            name,
+            tracking_id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
 }
 
 pub fn with_db(db: DB) -> impl Filter<Extract = (DB,), Error = Infallible> + Clone {
