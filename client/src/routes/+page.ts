@@ -1,5 +1,3 @@
-export const ssr = false;
-
 import type { PageLoad } from './$types';
 import { getAuthToken } from '$lib/auth';
 import { TrackingsSchema } from '$lib/schema';

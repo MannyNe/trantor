@@ -126,7 +126,7 @@
 	}
 
 	.img-container {
-		background-image: url('/login-page-graphics.svg');
+		background-image: url('/illustrations/login-page.svg');
 		background-repeat: no-repeat;
 		background-position: center;
 	}
