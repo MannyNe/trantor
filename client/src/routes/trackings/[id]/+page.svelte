@@ -5,6 +5,7 @@
 	import { page } from '$app/stores';
 	import { getAuthToken } from '$lib/auth';
 	import { invalidateAll } from '$app/navigation';
+	import Tabs from '$lib/components/Tabs.svelte';
 	import Chart from '$lib/components/Chart.svelte';
 
 	type CustomChartData<T extends ChartType> = ChartData<T, number[], string>;
@@ -195,93 +196,120 @@
 		</div>
 	</section>
 
-	<div class="two-columns">
-		<section class="table-container">
-			<h1>Sources</h1>
+	<section class="tab-container">
+		<header>
+			<Tabs
+				tabs={[
+					{
+						icon: { emoji: '📈', label: 'chart icon' },
+						name: 'Stats',
+						path: '/trackings/[id]/',
+						active: true
+					},
+					{
+						icon: { emoji: '⚙️', label: 'gear icon' },
+						name: 'Settings',
+						path: '/trackings/[id]/settings',
+						active: false
+					}
+				]}
+			/>
+		</header>
 
-			<form class="add-source" on:submit|preventDefault={handleAddSource}>
-				<input required name="name" placeholder="Name" type="text" autocomplete="off" />
-				<button type="submit">Add Source</button>
-			</form>
-			<table>
-				<thead>
-					<th>Source Name</th>
-					<th>Session Count</th>
-					<th>Visitor Count</th>
-					<th style="border-right: 1px solid #000;" />
-				</thead>
-				{#each data.sources as source}
-					<tr>
-						<td>{source.name}</td>
-						<td>{source.session_count}</td>
-						<td>{source.visitor_count}</td>
-						<td>
-							{#if source.name !== 'direct'}
-								<button on:click={() => deleteSource(source.name)}>
-									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-										<path
-											fill-rule="evenodd"
-											d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z"
-											clip-rule="evenodd"
-										/>
-									</svg>
-								</button>
-							{/if}
-						</td>
-					</tr>
-				{/each}
-			</table>
-			<div class="info">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-					<path
-						fill-rule="evenodd"
-						d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z"
-						clip-rule="evenodd"
-					/>
-				</svg>
+		<main>
+			<div class="two-columns">
+				<section class="table-container">
+					<h1>Sources</h1>
 
-				<p>
-					Add <span>?src=source_name</span> to the end of yor referer URL to specify the source.
-				</p>
+					<form class="add-source" on:submit|preventDefault={handleAddSource}>
+						<input required name="name" placeholder="Name" type="text" autocomplete="off" />
+						<button type="submit">Add Source</button>
+					</form>
+					<table>
+						<thead>
+							<th>Source Name</th>
+							<th>Session Count</th>
+							<th>Visitor Count</th>
+							<th style="border-right: 1px solid #000;" />
+						</thead>
+						{#each data.sources as source}
+							<tr>
+								<td>{source.name}</td>
+								<td>{source.session_count}</td>
+								<td>{source.visitor_count}</td>
+								<td>
+									{#if source.name !== 'direct'}
+										<button on:click={() => deleteSource(source.name)}>
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												viewBox="0 0 24 24"
+												fill="currentColor"
+											>
+												<path
+													fill-rule="evenodd"
+													d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z"
+													clip-rule="evenodd"
+												/>
+											</svg>
+										</button>
+									{/if}
+								</td>
+							</tr>
+						{/each}
+					</table>
+					<div class="info">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+							<path
+								fill-rule="evenodd"
+								d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z"
+								clip-rule="evenodd"
+							/>
+						</svg>
+
+						<p>
+							Add <span>?src=source_name</span> to the end of yor referer URL to specify the source.
+						</p>
+					</div>
+				</section>
+
+				<section class="table-container">
+					<h1>Paths</h1>
+
+					<table>
+						<thead>
+							<th>Path</th>
+							<th style="border-right: 1px solid #000;">Session Count</th>
+						</thead>
+						{#each data.paths as path}
+							<tr>
+								<td>{path.pathname}</td>
+								<td>{path.count}</td>
+							</tr>
+						{/each}
+					</table>
+				</section>
 			</div>
-		</section>
 
-		<section class="table-container">
-			<h1>Paths</h1>
+			<div class="two-columns">
+				<section class="table-container">
+					<h1>Page Titles</h1>
 
-			<table>
-				<thead>
-					<th>Path</th>
-					<th style="border-right: 1px solid #000;">Session Count</th>
-				</thead>
-				{#each data.paths as path}
-					<tr>
-						<td>{path.pathname}</td>
-						<td>{path.count}</td>
-					</tr>
-				{/each}
-			</table>
-		</section>
-	</div>
-
-	<div class="two-columns">
-		<section class="table-container">
-			<h1>Page Titles</h1>
-
-			<table>
-				<thead>
-					<th>Title</th>
-					<th style="border-right: 1px solid #000;">Session Count</th>
-				</thead>
-				{#each data.titles as title}
-					<tr>
-						<td>{title.title}</td>
-						<td>{title.count}</td>
-					</tr>
-				{/each}
-			</table>
-		</section>
-	</div>
+					<table>
+						<thead>
+							<th>Title</th>
+							<th style="border-right: 1px solid #000;">Session Count</th>
+						</thead>
+						{#each data.titles as title}
+							<tr>
+								<td>{title.title}</td>
+								<td>{title.count}</td>
+							</tr>
+						{/each}
+					</table>
+				</section>
+			</div>
+		</main>
+	</section>
 </div>
 
 <style>
@@ -409,23 +437,27 @@
 		}
 	}
 
+	.tab-container {
+		border: 2px solid #000;
+		box-shadow: 5px 6px rgba(0, 0, 0, 0.5);
+		margin-top: 2rem;
+	}
+
+	.tab-container main {
+		padding: 1rem;
+	}
+
 	.two-columns {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 2rem;
-		margin-top: 2rem;
+		margin-top: 1rem;
 	}
 
 	@media (max-width: 1100px) {
 		.two-columns {
 			grid-template-columns: 1fr;
 		}
-	}
-
-	.table-container {
-		padding: 1rem;
-		border: 2px solid #000;
-		box-shadow: 5px 6px rgba(0, 0, 0, 0.5);
 	}
 
 	.table-container h1 {
@@ -531,7 +563,6 @@
 
 	.info {
 		display: flex;
-		align-items: center;
 		gap: 0.2rem;
 		margin-top: 1rem;
 		font-family: monospace;

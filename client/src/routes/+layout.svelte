@@ -12,7 +12,7 @@
 			<h1>TRANTOR</h1>
 		</a>
 		{#if $authState !== null}
-			<button on:click={() => authState.set(null)}>Log out</button>
+			<button on:click={() => authState.set(null)}>LOG OUT</button>
 		{/if}
 	</header>
 
@@ -67,19 +67,19 @@
 	}
 
 	button {
-		padding: 1rem;
 		height: 100%;
-		border: 1px solid #000;
-		font-family: 'Press Start 2P', cursive;
-		cursor: pointer;
-		background-color: transparent;
+		padding: 1rem;
 		font-size: 1rem;
+		font-family: 'Press Start 2P', cursive;
+		background-color: #000;
+		color: #fff;
+		cursor: pointer;
+		border: none;
 	}
 
 	button:hover,
 	button:focus {
-		background-color: #000;
-		color: #fff;
+		background-color: #000000aa;
 	}
 
 	button:active {
