@@ -153,6 +153,22 @@ pub async fn get_tracking(db: DB, tracking_id: i32) -> Result<impl warp::Reply, 
     }))
 }
 
+pub async fn delete_tracking(
+    db: DB,
+    tracking_id: i32,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Deleting tracking: {}", tracking_id);
+
+    db.delete_tracking(tracking_id).await.map_err(|e| {
+        log::error!("Error deleting tracking: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    Ok(warp::reply::with_status(
+        warp::reply(),
+        warp::http::StatusCode::NO_CONTENT,
+    ))
+}
 // Source Routes
 
 #[derive(Deserialize)]

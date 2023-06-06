@@ -635,6 +635,14 @@ impl DB {
 
         Ok(rec.name)
     }
+
+    pub async fn delete_tracking(&self, tracking_id: i32) -> Result<()> {
+        sqlx::query!(r#"DELETE FROM trackings WHERE id = $1"#, tracking_id)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
+    }
 }
 
 pub fn with_db(db: DB) -> impl Filter<Extract = (DB,), Error = Infallible> + Clone {

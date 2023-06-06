@@ -43,6 +43,13 @@ pub fn make_admin_routes(
         .and(warp::path!("trackings" / String))
         .and_then(user_id_owns_tracking)
         .and_then(|(db, tracking_id)| handlers::get_tracking(db, tracking_id));
+    let delete_tracking = warp::delete()
+        .and(with_db(db.clone()))
+        .and(extract_basic_token())
+        .and_then(authenticate_filter)
+        .and(warp::path!("trackings" / String))
+        .and_then(user_id_owns_tracking)
+        .and_then(|(db, tracking_id)| handlers::delete_tracking(db, tracking_id));
 
     let create_source = warp::post()
         .and(with_db(db.clone()))
@@ -94,6 +101,7 @@ pub fn make_admin_routes(
             .or(create_tracking)
             .or(list_trackings)
             .or(get_tracking)
+            .or(delete_tracking)
             .or(create_source)
             .or(list_sources)
             .or(delete_source)
