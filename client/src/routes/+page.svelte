@@ -63,7 +63,7 @@
 
 					<div>
 						<span class="number">{tracking.sessions_count}</span>
-						<span>{pluralized(tracking.sessions_count, 'visitor', 'visitors')}</span>
+						<span>{pluralized(tracking.sessions_count, 'session', 'sessions')}</span>
 					</div>
 
 					<div>

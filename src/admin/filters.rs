@@ -45,6 +45,13 @@ pub fn make_admin_routes(
         .and(warp::path!("trackings" / String))
         .and_then(user_id_owns_tracking)
         .and_then(|(db, tracking_id)| handlers::get_tracking(db, tracking_id));
+    let tracking_counts = warp::get()
+        .and(with_db(db.clone()))
+        .and(extract_basic_token())
+        .and_then(authenticate_filter)
+        .and(warp::path!("trackings" / String / "counts"))
+        .and_then(user_id_owns_tracking)
+        .and_then(|(db, tracking_id)| handlers::tracking_counts(db, tracking_id));
     let patch_tracking_name = warp::patch()
         .and(with_db(db.clone()))
         .and(extract_basic_token())
@@ -69,13 +76,6 @@ pub fn make_admin_routes(
         .and_then(user_id_owns_tracking)
         .and(warp::body::json::<CreateSourceRequest>())
         .and_then(|(db, tracking_id), source| handlers::create_source(db, tracking_id, source));
-    let list_sources = warp::get()
-        .and(with_db(db.clone()))
-        .and(extract_basic_token())
-        .and_then(authenticate_filter)
-        .and(warp::path!("trackings" / String / "sources"))
-        .and_then(user_id_owns_tracking)
-        .and_then(|(db, tracking_id)| handlers::list_sources(db, tracking_id));
     let delete_source = warp::delete()
         .and(with_db(db.clone()))
         .and(extract_basic_token())
@@ -90,33 +90,16 @@ pub fn make_admin_routes(
             handlers::delete_source(db, tracking_id, source_name)
         });
 
-    let count_paths = warp::get()
-        .and(with_db(db.clone()))
-        .and(extract_basic_token())
-        .and_then(authenticate_filter)
-        .and(warp::path!("trackings" / String / "paths"))
-        .and_then(user_id_owns_tracking)
-        .and_then(|(db, tracking_id)| handlers::count_paths(db, tracking_id));
-    let count_titles = warp::get()
-        .and(with_db(db))
-        .and(extract_basic_token())
-        .and_then(authenticate_filter)
-        .and(warp::path!("trackings" / String / "titles"))
-        .and_then(user_id_owns_tracking)
-        .and_then(|(db, tracking_id)| handlers::count_titles(db, tracking_id));
-
     warp::path("admin").and(
         authenticate_user
             .or(create_user)
             .or(create_tracking)
             .or(list_trackings)
             .or(get_tracking)
+            .or(tracking_counts)
             .or(patch_tracking_name)
             .or(delete_tracking)
             .or(create_source)
-            .or(list_sources)
-            .or(delete_source)
-            .or(count_paths)
-            .or(count_titles),
+            .or(delete_source),
     )
 }

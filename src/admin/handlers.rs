@@ -61,7 +61,7 @@ pub async fn create_tracking(
 }
 
 #[derive(Serialize)]
-struct TrackingStatsResponse {
+struct TrackingsResponse {
     trackings: Vec<SingleTracking>,
 }
 
@@ -73,7 +73,7 @@ pub async fn list_trackings((db, user_id): (DB, i32)) -> Result<impl warp::Reply
         warp::reject::custom(DatabaseError)
     })?;
 
-    Ok(warp::reply::json(&TrackingStatsResponse { trackings }))
+    Ok(warp::reply::json(&TrackingsResponse { trackings }))
 }
 
 #[derive(Serialize)]
@@ -195,6 +195,42 @@ pub async fn delete_tracking(
     ))
 }
 
+#[derive(Serialize)]
+struct TrackingCountsResponse {
+    sources: Vec<SingleSource>,
+    paths: Vec<CountByPathname>,
+    titles: Vec<CountByTitle>,
+}
+
+pub async fn tracking_counts(
+    db: DB,
+    tracking_id: i32,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    log::info!("Getting tracking counts: {}", tracking_id);
+
+    let sources = db.list_sources(tracking_id).await.map_err(|e| {
+        log::error!("Error listing sources: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+    let paths = db
+        .count_sessions_by_pathname(tracking_id)
+        .await
+        .map_err(|e| {
+            log::error!("Error counting sessions by pathname: {}", e);
+            warp::reject::custom(DatabaseError)
+        })?;
+    let titles = db.count_sessions_by_title(tracking_id).await.map_err(|e| {
+        log::error!("Error counting sessions by title: {}", e);
+        warp::reject::custom(DatabaseError)
+    })?;
+
+    Ok(warp::reply::json(&TrackingCountsResponse {
+        sources,
+        paths,
+        titles,
+    }))
+}
+
 // Source Routes
 
 #[derive(Deserialize)]
@@ -222,32 +258,6 @@ pub async fn create_source(
     ))
 }
 
-#[derive(Serialize)]
-struct ListSourcesResponse {
-    sources: Vec<SingleSource>,
-}
-
-pub async fn list_sources(db: DB, tracking_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Listing sources");
-
-    let mut sources = db.list_sources(tracking_id).await.map_err(|e| {
-        log::error!("Error listing sources: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-
-    let visitors_without_source = db
-        .visitors_and_sessions_no_source(tracking_id)
-        .await
-        .map_err(|e| {
-            log::error!("Error counting visitors without source: {}", e);
-            warp::reject::custom(DatabaseError)
-        })?;
-
-    sources.push(visitors_without_source);
-
-    Ok(warp::reply::json(&ListSourcesResponse { sources }))
-}
-
 pub async fn delete_source(
     db: DB,
     tracking_id: i32,
@@ -266,43 +276,4 @@ pub async fn delete_source(
         warp::reply(),
         warp::http::StatusCode::NO_CONTENT,
     ))
-}
-
-// Path Routes
-
-#[derive(Serialize)]
-struct ListPathsResponse {
-    paths: Vec<CountByPathname>,
-}
-
-pub async fn count_paths(db: DB, tracking_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Counting paths");
-
-    let paths = db
-        .count_sessions_by_pathname(tracking_id)
-        .await
-        .map_err(|e| {
-            log::error!("Error counting paths: {}", e);
-            warp::reject::custom(DatabaseError)
-        })?;
-
-    Ok(warp::reply::json(&ListPathsResponse { paths }))
-}
-
-// Title Routes
-
-#[derive(Serialize)]
-struct ListTitlesResponse {
-    titles: Vec<CountByTitle>,
-}
-
-pub async fn count_titles(db: DB, tracking_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Counting titles");
-
-    let titles = db.count_sessions_by_title(tracking_id).await.map_err(|e| {
-        log::error!("Error counting titles: {}", e);
-        warp::reject::custom(DatabaseError)
-    })?;
-
-    Ok(warp::reply::json(&ListTitlesResponse { titles }))
 }
