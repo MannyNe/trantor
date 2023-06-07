@@ -25,3 +25,10 @@ include_dir = "0.7.3"
 
 [profile.dev.package.sqlx-macros]
 opt-level = 3
+
+[profile.release]
+strip = true
+opt-level = "z"   # Optimize for size.
+lto = true
+codegen-units = 1
+panic = "abort"
