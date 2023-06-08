@@ -34,24 +34,10 @@
 			<form on:submit|preventDefault={handleSubmit}>
 				{errorDisplay}
 				<div>
-					<input
-						required
-						name="userId"
-						type="text"
-						placeholder="User ID"
-						size="30"
-						value="01H1TQESMFGEYQ6F34589QFJ1V"
-					/>
+					<input required name="userId" type="text" placeholder="User ID" size="30" />
 				</div>
 				<div>
-					<input
-						required
-						name="secretCode"
-						type="text"
-						placeholder="Secret Code"
-						size="30"
-						value="10004"
-					/>
+					<input required name="secretCode" type="text" placeholder="Secret Code" size="30" />
 				</div>
 				<div>
 					<button type="submit">Login</button>
