@@ -2,7 +2,7 @@
 
 ![logo](./logo.png)
 
-Trantor is a simple analytics server that focuses on websites made to market and test products or start-up ideas. Typically in this kind of websites, the most important information you want is how many people are visiting your website, how long they are staying, and how many of them are returning and you might also want to store some information about them to contact them late like their email. Trantor is built to do just that, it's a simple analytics server that you can deploy on **your own server** and use to track **your websites**.
+Trantor is a simple analytics server that focuses on websites made to market and test products or start-up ideas. Typically in this kind of websites, the most important information you want is how many people are visiting your website, how long they are staying, and how many of them are returning and you might also want to store some information about them to contact them later like their email. Trantor is built to do just that, it's a simple analytics server that you can deploy on **your own server** and use to track **your websites**.
 
 ## Features
 
