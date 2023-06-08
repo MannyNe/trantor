@@ -40,16 +40,21 @@ export const TrackingsSchema = z.object({
 	trackings: z.array(TrackingSchema)
 });
 
-const SourceSchema = z.object({
-	name: z.string(),
-	session_count: z.number(),
-	visitor_count: z.number()
+const VisitorAndSessionCount = z.object({
+	visitor_count: z.number(),
+	session_count: z.number()
 });
+
+const SourceSchema = VisitorAndSessionCount.extend({ name: z.string() });
+const RefererSchema = VisitorAndSessionCount.extend({ referer: z.string() });
 
 export const TrackingCounts = z.object({
 	sources: z
 		.array(SourceSchema)
 		.transform((v) => v.sort((a, b) => b.session_count - a.session_count)),
 	paths: z.array(pathCountSchema).transform((v) => v.sort((a, b) => b.count - a.count)),
-	titles: z.array(titleCountSchema).transform((v) => v.sort((a, b) => b.count - a.count))
+	titles: z.array(titleCountSchema).transform((v) => v.sort((a, b) => b.count - a.count)),
+	refers: z
+		.array(RefererSchema)
+		.transform((v) => v.sort((a, b) => b.session_count - a.session_count))
 });

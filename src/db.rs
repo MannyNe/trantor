@@ -246,6 +246,34 @@ impl DB {
     }
 }
 
+#[derive(FromRow, Serialize)]
+pub struct SingleReferer {
+    referer: String,
+    visitor_count: i64,
+    session_count: i64,
+}
+
+impl DB {
+    pub async fn list_refers(&self, tracking_id: i32) -> Result<Vec<SingleReferer>> {
+        let rec = sqlx::query_as!(
+            SingleReferer,
+            r#"
+            SELECT visitors.referer as referer,
+                COUNT(DISTINCT visitors.id) as "visitor_count!",
+                COUNT(DISTINCT sessions.id) as "session_count!"
+            FROM visitors JOIN sessions ON visitors.id = sessions.visitor_id
+            WHERE visitors.tracking_id = $1
+            GROUP BY referer
+        "#,
+            tracking_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+}
+
 pub struct NewSessionData {
     session_id: String,
     visitor_id: i32,

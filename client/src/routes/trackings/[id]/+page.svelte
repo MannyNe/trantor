@@ -137,6 +137,25 @@
 			{/each}
 		</table>
 	</section>
+
+	<section class="table-container">
+		<h1>Referer counts</h1>
+
+		<table>
+			<thead>
+				<th>Referer</th>
+				<th>Session Count</th>
+				<th style="border-right: 1px solid #000;">Visitor Count</th>
+			</thead>
+			{#each data.refers as refer}
+				<tr>
+					<td>{refer.referer}</td>
+					<td>{refer.session_count}</td>
+					<td>{refer.visitor_count}</td>
+				</tr>
+			{/each}
+		</table>
+	</section>
 </div>
 
 <style>
