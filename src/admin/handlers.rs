@@ -208,10 +208,19 @@ pub async fn tracking_counts(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     log::info!("Getting tracking counts: {}", tracking_id);
 
-    let sources = db.list_sources(tracking_id).await.map_err(|e| {
+    let mut sources = db.list_sources(tracking_id).await.map_err(|e| {
         log::error!("Error listing sources: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
+    let direct = db
+        .visitors_and_sessions_no_source(tracking_id)
+        .await
+        .map_err(|e| {
+            log::error!("Error counting direct visitors: {}", e);
+            warp::reject::custom(DatabaseError)
+        })?;
+    sources.push(direct);
+
     let paths = db
         .count_sessions_by_pathname(tracking_id)
         .await

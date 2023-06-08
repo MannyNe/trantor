@@ -77,7 +77,7 @@ pub fn make_admin_routes(
         .and(warp::body::json::<CreateSourceRequest>())
         .and_then(|(db, tracking_id), source| handlers::create_source(db, tracking_id, source));
     let delete_source = warp::delete()
-        .and(with_db(db.clone()))
+        .and(with_db(db))
         .and(extract_basic_token())
         .and_then(authenticate_filter)
         .and(warp::path!("trackings" / String / "sources" / String))
