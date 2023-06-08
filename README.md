@@ -70,10 +70,10 @@ cargo run
 You can do that with [httpie](https://httpie.io/):
 
 ```bash
-http POST localhost:3030/admin/users secret_code=secret_code
+http POST localhost:3030/admin/users secret_code=10005
 ```
 
-You can do that with [curl](https://curl.se/):
+or you can use [curl](https://curl.se/):
 
 ```bash
 curl -X POST localhost:3030/admin/users -H 'Content-Type: application/json' -d '{"secret_code":"10005"}'
