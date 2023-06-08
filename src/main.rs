@@ -8,6 +8,7 @@ use warp::Filter;
 use trantor::{admin, db::DB, errors, session};
 
 const REGEXES: &[u8; 205550] = include_bytes!("../data/ua-regexes.yml");
+const LAUNCH_CONTROL_JS: &str = include_str!("../data/launch-control.js");
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -45,8 +46,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let fronted_routes = warp::path::tail().and_then(send_file_from_embedded_dir);
     let index_page = warp::any().and_then(index_from_embedded_dir);
 
+    let launch_control_script = warp::path!("launch-control.js")
+        .map(|| warp::reply::with_header(LAUNCH_CONTROL_JS, "content-type", "text/javascript"));
+
     let routes = admin_routes
         .or(session_routes)
+        .or(launch_control_script)
         .or(fronted_routes)
         .or(index_page)
         .recover(errors::handle_rejection)
