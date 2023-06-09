@@ -5,8 +5,10 @@
 
 <div class="no-data">
 	<img src="/illustrations/no-data.svg" alt="No data" />
-	<h1>No data yet</h1>
-	<p>Include the following script in your website to start tracking</p>
+	<header>
+		<h1>No data yet</h1>
+		<p>Include the following script in your website to start tracking</p>
+	</header>
 	<pre>&lt;script async defer
 	src="{origin}/launch-control.js"
 	data-id="trantor"
@@ -29,7 +31,7 @@
 
 	.no-data img {
 		width: 100%;
-		max-width: 550px;
+		max-width: 300px;
 	}
 
 	.no-data h1 {
