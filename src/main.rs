@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .allow_credentials(true);
 
     let fronted_routes = warp::path::tail().and_then(send_file_from_embedded_dir);
-    let index_page = warp::any().and_then(index_from_embedded_dir);
+    let index_page = warp::get().and_then(index_from_embedded_dir);
 
     let launch_control_script = warp::path!("launch-control.js")
         .map(|| warp::reply::with_header(LAUNCH_CONTROL_JS, "content-type", "text/javascript"));
