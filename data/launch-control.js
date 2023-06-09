@@ -43,8 +43,6 @@ class LaunchControl {
 
     this.sendSessionStartBeacon();
     this.lastSessionState = "start";
-
-    console.log("session start");
   }
 
   /**
@@ -102,8 +100,6 @@ class LaunchControl {
 
     this.sendSessionEndBeacon();
     this.lastSessionState = "end";
-
-    console.log("session end");
   }
 
   /**

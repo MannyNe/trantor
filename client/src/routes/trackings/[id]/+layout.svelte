@@ -106,8 +106,6 @@
 	function copyTrackingId() {
 		navigator.clipboard.writeText($page.params.id);
 	}
-
-	console.log($page);
 </script>
 
 <svelte:head>
