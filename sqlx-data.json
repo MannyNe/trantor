@@ -1,0 +1,721 @@
+{
+  "db": "PostgreSQL",
+  "0480891b7bfc40f015abe32e518bd366b71cd996094dc3111a96ff89a6d23c1f": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT COUNT(id) as count FROM sessions"
+  },
+  "07354ecf3652fd85bc22da4c2c9dd9d029e97c1e875f92c4ff06af2a0cfbb7df": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Bpchar"
+        ]
+      }
+    },
+    "query": "SELECT id FROM trackings WHERE tracking_id = $1"
+  },
+  "11a61ac5912eb8b89a3dbaf47ec626706801179753361ac015e36ed3f7588cee": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT COUNT(id) as count FROM sources"
+  },
+  "14256c0080d053675638cfebe60dfce4e1dc0959f0836f8180840c8ff7123578": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT id FROM sources WHERE name = $1"
+  },
+  "18970043ed9c51e33e330ba941526baef8c2c180fecf62d60a0442584072c364": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Float8",
+          "Bpchar"
+        ]
+      }
+    },
+    "query": "UPDATE sessions SET ended_at = CURRENT_TIMESTAMP, end_timestamp = TO_TIMESTAMP($1) WHERE session_id = $2"
+  },
+  "224ac3a349ae763fe27efbfb9d8d4c39e46f5447185bab725caacc9df3c2ff38": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Int4"
+        ]
+      }
+    },
+    "query": "INSERT INTO sources (name, tracking_id) VALUES ($1, $2) RETURNING id"
+  },
+  "333559559e7393ed93b5990d04547316bca4abc53231384c286fdbc7192c41d5": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "title",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        null,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT COUNT(DISTINCT sessions.id) as \"count!\",\n                sessions.title as title\n            FROM sessions\n            WHERE tracking_id = $1\n            GROUP BY title\n        "
+  },
+  "3621bc8dbc44dcb32088f8245bceab05f4f9380f9c4f4a30b730e84a0857943a": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Bpchar",
+          "Varchar",
+          "Varchar",
+          "Int4",
+          "Json",
+          "Int4"
+        ]
+      }
+    },
+    "query": "INSERT INTO visitors (\n                visitor_id, user_agent, referer, source_id, user_agent_parsed, tracking_id\n            ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
+  },
+  "38aec883e8d38a084e2d577df305084282b96f4613e2e565dae68f96b1bc97e4": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Bpchar"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 2,
+          "type_info": "Timestamp"
+        },
+        {
+          "name": "visitor_count",
+          "ordinal": 3,
+          "type_info": "Int8"
+        },
+        {
+          "name": "sessions_count",
+          "ordinal": 4,
+          "type_info": "Int8"
+        },
+        {
+          "name": "events_count",
+          "ordinal": 5,
+          "type_info": "Int8"
+        },
+        {
+          "name": "sources_count",
+          "ordinal": 6,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        null,
+        null,
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT trackings.tracking_id as id,\n                trackings.name as name,\n                trackings.created_at as created_at,\n                COUNT(DISTINCT visitors.id) as visitor_count,\n                COUNT(DISTINCT sessions.id) as sessions_count,\n                COUNT(DISTINCT events.id) as events_count,\n                COUNT(DISTINCT sources.id) as sources_count\n            FROM trackings\n                LEFT JOIN visitors ON visitors.tracking_id = trackings.id\n                LEFT JOIN sessions ON sessions.tracking_id = trackings.id\n                LEFT JOIN events ON events.tracking_id = trackings.id\n                LEFT JOIN sources ON sources.tracking_id = trackings.id\n            WHERE trackings.owner_id = $1 \n            GROUP BY trackings.tracking_id, trackings.name, trackings.created_at\n        "
+  },
+  "58ffb39029556da588544036a2cca2caec32d18bed620c4d2aee690848742e1b": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "hour!",
+          "ordinal": 1,
+          "type_info": "Numeric"
+        }
+      ],
+      "nullable": [
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT COUNT(id) as \"count!\",\n                EXTRACT(HOUR FROM start_timestamp) as \"hour!\"\n            FROM sessions\n            WHERE tracking_id = $1\n            GROUP BY \"hour!\"\n        "
+  },
+  "5b82986a2825d0959759f746cc5730c50e98ddcc7e81ebe73e155c006898cf85": {
+    "describe": {
+      "columns": [
+        {
+          "name": "name",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "visitor_count!",
+          "ordinal": 1,
+          "type_info": "Int8"
+        },
+        {
+          "name": "session_count!",
+          "ordinal": 2,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT sources.name as name,\n                COUNT(DISTINCT visitors.id) as \"visitor_count!\",\n                COUNT(DISTINCT sessions.id) as \"session_count!\"\n            FROM sources \n                LEFT JOIN visitors ON visitors.source_id = sources.id\n                LEFT JOIN sessions ON sessions.visitor_id = visitors.id\n            WHERE sources.tracking_id = $1\n            GROUP BY sources.name, sources.created_at\n            "
+  },
+  "67b3629dac9a4320baa79f710d0ef0aa7cde4c6d723d0c394a58e27e8a9e456f": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "DELETE FROM trackings WHERE id = $1"
+  },
+  "68f2f2858d46ae27c873adba3da6c277216eabf218da5c0d8e5b3ccf58309506": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "hour!",
+          "ordinal": 1,
+          "type_info": "Numeric"
+        }
+      ],
+      "nullable": [
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT COUNT(id) as \"count!\",\n                EXTRACT(HOUR FROM created_at) as \"hour!\"\n            FROM visitors\n            WHERE tracking_id = $1\n            GROUP BY \"hour!\"\n        "
+  },
+  "6b2a913aa48496e090e2d3f90c2341e67e28bfdfe5228c0ee22143bb7679f542": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Bpchar"
+        ]
+      }
+    },
+    "query": "SELECT id FROM visitors WHERE visitor_id = $1"
+  },
+  "8c05f1cc22c1112721c70e96faf3c8848652e3547c3c312f835a1c7373fd7c22": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "secret_code",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Bpchar"
+        ]
+      }
+    },
+    "query": "SELECT id, secret_code FROM users WHERE user_id = $1"
+  },
+  "95f39609bc12e2eb3dbd85f413ef37d79766ce6884f2f6717b35bd085539cb39": {
+    "describe": {
+      "columns": [
+        {
+          "name": "name",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT name FROM trackings WHERE id = $1"
+  },
+  "96225cea2ed313c88a4dd74855b8956aac3c4ef3dd63cb94ad95a2c98aae86ec": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE trackings SET name = $1 WHERE id = $2"
+  },
+  "9f94804bde56daf10eb0f81c833b4ba411ce1ac034c2e350c9fccedda855dfb8": {
+    "describe": {
+      "columns": [
+        {
+          "name": "user_id",
+          "ordinal": 0,
+          "type_info": "Bpchar"
+        },
+        {
+          "name": "secret_code",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Bpchar",
+          "Varchar"
+        ]
+      }
+    },
+    "query": "INSERT INTO users (user_id, secret_code) VALUES ($1, $2) RETURNING user_id, secret_code"
+  },
+  "b0f82ca98c4f98634b7c7ebb518b18e520991ac36f9bc750e6f249043ccbafcf": {
+    "describe": {
+      "columns": [
+        {
+          "name": "referer",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "visitor_count!",
+          "ordinal": 1,
+          "type_info": "Int8"
+        },
+        {
+          "name": "session_count!",
+          "ordinal": 2,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT visitors.referer as referer,\n                COUNT(DISTINCT visitors.id) as \"visitor_count!\",\n                COUNT(DISTINCT sessions.id) as \"session_count!\"\n            FROM visitors JOIN sessions ON visitors.id = sessions.visitor_id\n            WHERE visitors.tracking_id = $1\n            GROUP BY referer\n        "
+  },
+  "b61925410dc3f5bf2f7e3783d546445cc53fd6ff57db25e14772a75fba22904f": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "owner_id",
+          "ordinal": 1,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Bpchar"
+        ]
+      }
+    },
+    "query": "SELECT id, owner_id FROM trackings WHERE tracking_id = $1"
+  },
+  "c5b569434c71008871f0d5538613691d029cc0eaa18767247df132b88e01fc51": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "weekday!",
+          "ordinal": 1,
+          "type_info": "Numeric"
+        }
+      ],
+      "nullable": [
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT COUNT(id) as \"count!\",\n                EXTRACT(DOW FROM created_at) as \"weekday!\"\n            FROM visitors\n            WHERE tracking_id = $1\n            GROUP BY \"weekday!\"\n        "
+  },
+  "cbfb2b15966d6bf87a6afbc520a974e0a73d5b3111df5cc24c7c3330602e5eb7": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "device!",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT COUNT(id) as \"count!\",\n                user_agent_parsed->'device'->>'family' AS \"device!\"\n            FROM visitors\n            WHERE tracking_id = $1\n            GROUP BY \"device!\"\n        "
+  },
+  "d00836e0fafd09c1dadceaa1fd0b3f899479486338ccde02a174dce022631555": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "weekday!",
+          "ordinal": 1,
+          "type_info": "Numeric"
+        }
+      ],
+      "nullable": [
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT COUNT(id) as \"count!\",\n                EXTRACT(DOW FROM start_timestamp) as \"weekday!\"\n            FROM sessions\n            WHERE tracking_id = $1\n            GROUP BY \"weekday!\"\n        "
+  },
+  "dcf8893a70d5774ee90deda0501d02f5d633f16b8df83b924efd20a0111b1b56": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Bpchar",
+          "Varchar",
+          "Varchar",
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO events (session_id, type, target, tracking_id)\n            VALUES (\n                (SELECT id FROM sessions WHERE session_id = $1), $2, $3, $4\n            )\n            "
+  },
+  "de17fe7e75fd0645d2c42b4fd65f4a6df8586b66cf27ef1191113b2d7206e813": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "pathname",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        null,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT COUNT(DISTINCT sessions.id) as \"count!\",\n                sessions.pathname as pathname\n            FROM sessions\n            WHERE tracking_id = $1\n            GROUP BY pathname\n        "
+  },
+  "e4147482dcb163add317b863ee2ed21f62c960733cadc32cdcaa4d7a0011ae2c": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Bpchar",
+          "Int4",
+          "Float8",
+          "Varchar",
+          "Varchar",
+          "Int4"
+        ]
+      }
+    },
+    "query": "INSERT INTO sessions (session_id, visitor_id, start_timestamp, title, pathname, tracking_id)\n            VALUES ($1, $2, TO_TIMESTAMP($3), $4, $5, $6)"
+  },
+  "e5cd553ff660d18c0bf48fd0086e5dc6431aa8de2a3ffd9e213e20409e723588": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Bpchar",
+          "Varchar",
+          "Int4"
+        ]
+      }
+    },
+    "query": "INSERT INTO trackings (tracking_id, name, owner_id) VALUES ($1, $2, $3)"
+  },
+  "f6a66c5e62d553bb355d180cb321f9fa72da5ca3a794b6cacd6172c9abcb8208": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "os!",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT COUNT(id) as \"count!\",\n                user_agent_parsed->'os'->>'family' AS \"os!\"\n            FROM visitors\n            WHERE tracking_id = $1\n            GROUP BY \"os!\"\n        "
+  },
+  "f891c9362f9ab62ab31ad1e797b3f584db0ba61bcb5eb1d3d542d68cfc7ff540": {
+    "describe": {
+      "columns": [
+        {
+          "name": "visitor_count!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "sessions_count!",
+          "ordinal": 1,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT COUNT(DISTINCT visitors.id) as \"visitor_count!\",\n                COUNT(DISTINCT sessions.id) as \"sessions_count!\"\n            FROM visitors \n                LEFT JOIN sessions ON sessions.visitor_id = visitors.id\n            WHERE visitors.source_id IS NULL AND visitors.tracking_id = $1\n            "
+  },
+  "f95c0ca5194ac888f4571df6dc8fcd509a04cbb5e8b2979c8a9c1dccc39d824e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "browser!",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT COUNT(id) as \"count!\",\n                user_agent_parsed->'user_agent'->>'family' AS \"browser!\"\n            FROM visitors\n            WHERE tracking_id = $1\n            GROUP BY \"browser!\"\n        "
+  },
+  "fe2f62f72c0d0f31f82009a11f8f540cd227a524a89404e2cefd8418fb8626b5": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Int4"
+        ]
+      }
+    },
+    "query": "DELETE FROM sources WHERE name = $1 AND tracking_id = $2"
+  }
+}

@@ -15,7 +15,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::info!("Connected to {}", &db_url);
 
     let routes = server(pool).await?;
-    warp::serve(routes).run(([0, 0, 0, 0], 80)).await;
+    warp::serve(routes)
+        .tls()
+        .cert_path("/etc/letsencrypt/live/trantor.frectonz.tech/fullchain.pem")
+        .key_path("/etc/letsencrypt/live/trantor.frectonz.tech/privkey.pem")
+        .run(([0, 0, 0, 0], 443))
+        .await;
 
     Ok(())
 }
