@@ -5,6 +5,7 @@
 	import { page } from '$app/stores';
 	import Tabs from '$lib/components/Tabs.svelte';
 	import Chart from '$lib/components/Chart.svelte';
+	import NoData from '$lib/components/NoData.svelte';
 
 	type CustomChartData<T extends ChartType> = ChartData<T, number[], string>;
 
@@ -105,6 +106,8 @@
 	function copyTrackingId() {
 		navigator.clipboard.writeText($page.params.id);
 	}
+
+	console.log($page);
 </script>
 
 <svelte:head>
@@ -113,16 +116,7 @@
 </svelte:head>
 
 {#if noData}
-	<div class="no-data">
-		<img src="/illustrations/no-data.svg" alt="No data" />
-		<h1>No data yet</h1>
-		<p>Include the following script in your website to start tracking</p>
-		<pre>&lt;script async defer
-	src="http://localhost:3030/launch-control.js"
-	data-id="trantor"
-	data-tracking-id="{$page.params.id}"
-&gt;&lt;/script&gt;</pre>
-	</div>
+	<NoData origin={$page.url.origin} trackingId={$page.params.id} />
 {:else}
 	<div class="app">
 		<h1>Tracking data for <span>{data.tracking.name}</span></h1>
@@ -321,45 +315,5 @@
 
 	.tab-container main {
 		padding: 1rem;
-	}
-
-	.no-data {
-		padding: 1rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex-direction: column;
-		gap: 1rem;
-		width: 100vw;
-		height: 100%;
-		font-family: monospace;
-	}
-
-	.no-data img {
-		width: 100%;
-		max-width: 550px;
-	}
-
-	.no-data h1 {
-		font-size: 2rem;
-		font-family: 'Press Start 2P', cursive;
-		text-align: center;
-	}
-
-	.no-data p {
-		font-size: 1.2rem;
-		text-align: center;
-	}
-
-	.no-data pre {
-		padding: 1rem;
-		font-size: 1rem;
-		background-color: #fff;
-		border: 1px solid black;
-		box-shadow: 5px 6px rgba(0, 0, 0, 0.5);
-
-		width: 100%;
-		max-width: 600px;
-		overflow-x: scroll;
 	}
 </style>
