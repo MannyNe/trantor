@@ -84,7 +84,6 @@ async fn send_file_from_embedded_dir(
         _ => "application/octet-stream",
     };
 
-    // stream the file contents back to the client
     let resp = warp::http::Response::builder()
         .header("content-type", content_type)
         .header("content-length", file.contents().len())
