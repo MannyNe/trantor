@@ -11,7 +11,10 @@ use std::path::Path;
 
 use db::DB;
 use include_dir::{include_dir, Dir};
-use sqlx::PgPool;
+use sqlx::{
+    types::chrono::{self, Utc},
+    PgPool,
+};
 use uaparser::UserAgentParser;
 use warp::Filter;
 
@@ -84,11 +87,21 @@ async fn send_file_from_embedded_dir(
         _ => "application/octet-stream",
     };
 
+    let last_modified = file
+        .metadata()
+        .map(|m| m.modified())
+        .unwrap_or_else(|| std::time::SystemTime::now());
+    let last_modified = chrono::DateTime::<Utc>::from(last_modified)
+        .format("%a, %d %b %Y %H:%M:%S GMT")
+        .to_string();
+
     let resp = warp::http::Response::builder()
         .header("content-type", content_type)
         .header("content-length", file.contents().len())
-        .header("cache-control", "max-age=1000") // cache for 1000 seconds
-        .body(file.contents());
+        .header("last-modified", last_modified)
+        .header("cache-control", "max-age=43200") // 12 hours
+        .body(file.contents())
+        .unwrap();
 
     Ok(resp)
 }
