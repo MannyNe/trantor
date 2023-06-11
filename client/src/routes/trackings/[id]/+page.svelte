@@ -24,10 +24,10 @@
 
 		if (res.status !== 201) {
 			alert('Something went wrong');
+		} else {
+			form.reset();
+			await invalidateAll();
 		}
-
-		form.reset();
-		await invalidateAll();
 	}
 
 	async function deleteSource(name: string) {
@@ -45,9 +45,9 @@
 
 		if (res.status !== 204) {
 			alert('Something went wrong');
+		} else {
+			await invalidateAll();
 		}
-
-		await invalidateAll();
 	}
 </script>
 

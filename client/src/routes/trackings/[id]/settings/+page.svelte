@@ -18,9 +18,9 @@
 
 		if (res.status !== 204) {
 			alert('Something went wrong');
+		} else {
+			await goto('/');
 		}
-
-		await goto('/');
 	}
 
 	async function renameTracking(e: Event) {
@@ -41,10 +41,10 @@
 
 		if (res.status !== 204) {
 			alert('Something went wrong');
+		} else {
+			form.reset();
+			await invalidateAll();
 		}
-
-		form.reset();
-		await invalidateAll();
 	}
 </script>
 
