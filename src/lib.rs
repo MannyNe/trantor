@@ -84,11 +84,14 @@ async fn send_file_from_embedded_dir(
         _ => "application/octet-stream",
     };
 
-    Ok(warp::reply::with_header(
-        file.contents(),
-        "content-type",
-        content_type,
-    ))
+    // stream the file contents back to the client
+    let resp = warp::http::Response::builder()
+        .header("content-type", content_type)
+        .header("content-length", file.contents().len())
+        .header("cache-control", "max-age=1000") // cache for 1000 seconds
+        .body(file.contents());
+
+    Ok(resp)
 }
 
 async fn index_from_embedded_dir() -> Result<impl warp::Reply, warp::Rejection> {
