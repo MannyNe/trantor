@@ -44,7 +44,7 @@ impl DB {
     }
 
     pub async fn id_from_tracking_id(&self, tracking_id: &str) -> Result<i32> {
-        log::info!("Extracting tracking id: {:?}", tracking_id);
+        tracing::info!("Extracting tracking id: {:?}", tracking_id);
 
         let rec = sqlx::query!(
             r#"SELECT id FROM trackings WHERE tracking_id = $1"#,

@@ -24,12 +24,12 @@ pub async fn create_user(
     db: DB,
     request: CreateUserRequest,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Creating user");
+    tracing::info!("Creating user");
 
     let new_user = NewUserData::new(&request.secret_code);
 
     let user = db.create_user(&new_user).await.map_err(|e| {
-        log::error!("Error creating user: {}", e);
+        tracing::error!("Error creating user: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
 
@@ -50,11 +50,11 @@ pub async fn create_tracking(
     (db, user_id): (DB, i32),
     req: CreateTrackingRequest,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Creating tracking");
+    tracing::info!("Creating tracking");
 
     let new_tracking = NewTrackingData::new(req.name, user_id);
     db.create_tracking(&new_tracking).await.map_err(|e| {
-        log::error!("Error creating tracking: {}", e);
+        tracing::error!("Error creating tracking: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
 
@@ -67,10 +67,10 @@ struct TrackingsResponse {
 }
 
 pub async fn list_trackings((db, user_id): (DB, i32)) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Listing trackings");
+    tracing::info!("Listing trackings");
 
     let trackings = db.list_trackings(user_id).await.map_err(|e| {
-        log::error!("Error listing trackings: {}", e);
+        tracing::error!("Error listing trackings: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
 
@@ -92,10 +92,10 @@ pub struct TrackingResponse {
 }
 
 pub async fn get_tracking(db: DB, tracking_id: i32) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Getting tracking");
+    tracing::info!("Getting tracking");
 
     let tracking_name = db.tracking_name(tracking_id).await.map_err(|e| {
-        log::error!("Error getting tracking name: {}", e);
+        tracing::error!("Error getting tracking name: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
 
@@ -103,42 +103,42 @@ pub async fn get_tracking(db: DB, tracking_id: i32) -> Result<impl warp::Reply, 
         db.count_sessions_by_weekday(tracking_id)
             .await
             .map_err(|e| {
-                log::error!("Error counting sessions: {}", e);
+                tracing::error!("Error counting sessions: {}", e);
                 warp::reject::custom(DatabaseError)
             })?;
     let visitor_count_by_weekday =
         db.count_visitors_by_weekday(tracking_id)
             .await
             .map_err(|e| {
-                log::error!("Error counting visitors: {}", e);
+                tracing::error!("Error counting visitors: {}", e);
                 warp::reject::custom(DatabaseError)
             })?;
 
     let session_count_by_hour = db.count_sessions_by_hour(tracking_id).await.map_err(|e| {
-        log::error!("Error counting sessions by hour: {}", e);
+        tracing::error!("Error counting sessions by hour: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
     let visitor_count_by_hour = db.count_visitors_by_hour(tracking_id).await.map_err(|e| {
-        log::error!("Error counting visitors by hour: {}", e);
+        tracing::error!("Error counting visitors by hour: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
 
     let visitor_count_by_os = db.count_visitors_by_os(tracking_id).await.map_err(|e| {
-        log::error!("Error counting visitors by os: {}", e);
+        tracing::error!("Error counting visitors by os: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
     let visitor_count_by_browser =
         db.count_visitors_by_browser(tracking_id)
             .await
             .map_err(|e| {
-                log::error!("Error counting visitors by browser: {}", e);
+                tracing::error!("Error counting visitors by browser: {}", e);
                 warp::reject::custom(DatabaseError)
             })?;
     let visitor_count_by_device = db
         .count_visitors_by_device(tracking_id)
         .await
         .map_err(|e| {
-            log::error!("Error counting visitors by device: {}", e);
+            tracing::error!("Error counting visitors by device: {}", e);
             warp::reject::custom(DatabaseError)
         })?;
 
@@ -164,12 +164,12 @@ pub async fn rename_tracking(
     tracking_id: i32,
     req: RenameTrackingRequest,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Renaming tracking: {}", tracking_id);
+    tracing::info!("Renaming tracking: {}", tracking_id);
 
     db.rename_tracking(tracking_id, &req.name)
         .await
         .map_err(|e| {
-            log::error!("Error renaming tracking: {}", e);
+            tracing::error!("Error renaming tracking: {}", e);
             warp::reject::custom(DatabaseError)
         })?;
 
@@ -183,10 +183,10 @@ pub async fn delete_tracking(
     db: DB,
     tracking_id: i32,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Deleting tracking: {}", tracking_id);
+    tracing::info!("Deleting tracking: {}", tracking_id);
 
     db.delete_tracking(tracking_id).await.map_err(|e| {
-        log::error!("Error deleting tracking: {}", e);
+        tracing::error!("Error deleting tracking: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
 
@@ -208,17 +208,17 @@ pub async fn tracking_counts(
     db: DB,
     tracking_id: i32,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Getting tracking counts: {}", tracking_id);
+    tracing::info!("Getting tracking counts: {}", tracking_id);
 
     let mut sources = db.list_sources(tracking_id).await.map_err(|e| {
-        log::error!("Error listing sources: {}", e);
+        tracing::error!("Error listing sources: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
     let direct = db
         .visitors_and_sessions_no_source(tracking_id)
         .await
         .map_err(|e| {
-            log::error!("Error counting direct visitors: {}", e);
+            tracing::error!("Error counting direct visitors: {}", e);
             warp::reject::custom(DatabaseError)
         })?;
     sources.push(direct);
@@ -227,15 +227,15 @@ pub async fn tracking_counts(
         .count_sessions_by_pathname(tracking_id)
         .await
         .map_err(|e| {
-            log::error!("Error counting sessions by pathname: {}", e);
+            tracing::error!("Error counting sessions by pathname: {}", e);
             warp::reject::custom(DatabaseError)
         })?;
     let titles = db.count_sessions_by_title(tracking_id).await.map_err(|e| {
-        log::error!("Error counting sessions by title: {}", e);
+        tracing::error!("Error counting sessions by title: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
     let refers = db.list_refers(tracking_id).await.map_err(|e| {
-        log::error!("Error listing refers: {}", e);
+        tracing::error!("Error listing refers: {}", e);
         warp::reject::custom(DatabaseError)
     })?;
 
@@ -259,12 +259,12 @@ pub async fn create_source(
     tracking_id: i32,
     request: CreateSourceRequest,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Creating source: {}", request.name);
+    tracing::info!("Creating source: {}", request.name);
 
     db.create_source(&request.name, tracking_id)
         .await
         .map_err(|e| {
-            log::error!("Error creating source: {}", e);
+            tracing::error!("Error creating source: {}", e);
             warp::reject::custom(DatabaseError)
         })?;
 
@@ -279,12 +279,12 @@ pub async fn delete_source(
     tracking_id: i32,
     source_name: String,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    log::info!("Deleting source: {}", source_name);
+    tracing::info!("Deleting source: {}", source_name);
 
     db.delete_source(&source_name, tracking_id)
         .await
         .map_err(|e| {
-            log::error!("Error creating source: {}", e);
+            tracing::error!("Error creating source: {}", e);
             warp::reject::custom(DatabaseError)
         })?;
 

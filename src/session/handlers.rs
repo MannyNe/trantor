@@ -15,10 +15,10 @@ pub async fn extract_source_id(
     db: DB,
     source_name: Option<String>,
 ) -> Result<(DB, Option<i32>), reject::Rejection> {
-    log::info!("Extracting source name: {:?}", source_name);
+    tracing::info!("Extracting source name: {:?}", source_name);
     let id = match source_name {
         Some(source_name) => Some(db.id_from_source_name(&source_name).await.map_err(|e| {
-            log::error!("Error getting source id: {}", e);
+            tracing::error!("Error getting source id: {}", e);
             reject::custom(DatabaseError)
         })?),
         None => None,
@@ -32,7 +32,7 @@ pub async fn extract_tracking_id(
     tracking_id: String,
 ) -> Result<(DB, i32), reject::Rejection> {
     let tracking_id = db.id_from_tracking_id(&tracking_id).await.map_err(|e| {
-        log::error!("Error getting tracking id: {}", e);
+        tracing::error!("Error getting tracking id: {}", e);
         reject::custom(DatabaseError)
     })?;
 
@@ -51,7 +51,7 @@ pub async fn extract_visitor_id(
     match visitor_id {
         Some(visitor_id) => {
             let id = db.id_from_visitor_id(&visitor_id).await.map_err(|e| {
-                log::error!("Error getting visitor id: {}", e);
+                tracing::error!("Error getting visitor id: {}", e);
                 reject::custom(DatabaseError)
             })?;
 
@@ -62,7 +62,7 @@ pub async fn extract_visitor_id(
                 NewVisitorData::new(user_agent, referer, source_id, ua_parser, tracking_id);
 
             let id = db.create_visitor(&new_visitor).await.map_err(|e| {
-                log::error!("Error creating visitor: {}", e);
+                tracing::error!("Error creating visitor: {}", e);
                 reject::custom(DatabaseError)
             })?;
 
@@ -73,7 +73,7 @@ pub async fn extract_visitor_id(
 
 pub async fn extract_session_id(session_id: Option<String>) -> Result<String, reject::Rejection> {
     let session_id = session_id.ok_or_else(|| {
-        log::error!("Missing session id");
+        tracing::error!("Missing session id");
         reject::custom(MissingSessionId)
     })?;
 
@@ -97,16 +97,16 @@ pub async fn session_start(
         pathname,
     }: SessionStart,
 ) -> Result<impl warp::Reply, reject::Rejection> {
-    log::info!("session-start");
-    log::info!("visitor_id: {}", visitor_id);
-    log::info!("timestamp: {}", timestamp);
-    log::info!("title: {}", title);
-    log::info!("pathname: {}", pathname);
+    tracing::info!("session-start");
+    tracing::info!("visitor_id: {}", visitor_id);
+    tracing::info!("timestamp: {}", timestamp);
+    tracing::info!("title: {}", title);
+    tracing::info!("pathname: {}", pathname);
 
     let new_session = NewSessionData::new(visitor_id, timestamp, title, pathname, tracking_id);
 
     db.create_session(&new_session).await.map_err(|e| {
-        log::error!("Error creating session: {}", e);
+        tracing::error!("Error creating session: {}", e);
         reject::custom(DatabaseError)
     })?;
 
@@ -136,12 +136,12 @@ pub async fn session_end(
     session_id: String,
     SessionEnd { timestamp }: SessionEnd,
 ) -> Result<impl warp::Reply, reject::Rejection> {
-    log::info!("session-end");
-    log::info!("session_id: {}", session_id);
-    log::info!("timestamp: {}", timestamp);
+    tracing::info!("session-end");
+    tracing::info!("session_id: {}", session_id);
+    tracing::info!("timestamp: {}", timestamp);
 
     db.end_session(&session_id, timestamp).await.map_err(|e| {
-        log::error!("Error ending session: {}", e);
+        tracing::error!("Error ending session: {}", e);
         reject::custom(DatabaseError)
     })?;
 
@@ -165,13 +165,13 @@ pub async fn session_event(
     event: Event,
     tracking_id: i32,
 ) -> Result<impl warp::Reply, reject::Rejection> {
-    log::info!("session-event");
-    log::info!("session_id: {}", session_id);
+    tracing::info!("session-event");
+    tracing::info!("session_id: {}", session_id);
 
     db.create_event(&session_id, &event._type, &event.target, tracking_id)
         .await
         .map_err(|e| {
-            log::error!("Error creating event: {}", e);
+            tracing::error!("Error creating event: {}", e);
             reject::custom(DatabaseError)
         })?;
 
