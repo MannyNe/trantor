@@ -14,6 +14,7 @@ Trantor is a simple analytics server that focuses on websites made to market and
 - A self hostable, solution that can be deployed from a single binary
 - A lightweight dashboard to manage your trackings and view analytics, built with [Svelte](https://svelte.dev/) and [Svelte Kit](https://kit.svelte.dev/)
 - A performant, scalable, and reliable backend built with [Rust](https://www.rust-lang.org/)
+- Configurable via a simple `config.toml` file
 
 ### ⚠️ **Trantor** is still in early development, and is not ready for production use yet, issues and pull requests are welcome
 
@@ -38,31 +39,24 @@ pnpm install
 pnpm build
 ```
 
-4. Add a `DATABASE_URL` environment variable that contains a connection string to a postgres database
+4. Create a `config.toml` file in the root of the project, using the following example
 
-```bash
-export DATABASE_URL="postgresql://postgres:password@localhost:5432/trantor"
+```toml
+address = "127.0.0.1:3030"
+database = "postgresql://postgres:password@localhost:5432/trantor"
+
+# Uncomment the following to enable `https` support
+# [https]
+# cert_path = "/etc/letsencrypt/live/trantor.frectonz.tech/fullchain.pem"
+# key_path = "/etc/letsencrypt/live/trantor.frectonz.tech/privkey.pem"
 ```
 
-(optional) I recommend creating a `.envrc` file in the root of the project and adding the `DATABASE_URL` variable there.
-The `.envrc` file should look like this:
+You will need a postgres database running and reachable at the address specified in the `config` file. Don't worry about the optional `https` options you, since you are running the server on your local machine you can use `http`.
+
+5. Now you can run the rust backend server, Be sure to run the backend from the root of the project.
 
 ```bash
-#!/bin/bash
-
-export DATABASE_URL="postgresql://postgres:password@localhost:5432/trantor"
-```
-
-You can use this environment variables by running the following command:
-
-```bash
-source .envrc
-```
-
-5. Now you can run the rust backend server, remember running the rust backend expects the `DATABASE_URL` environment variable to be set and the frontend dashboard to be built and available in the `client/build` directory. Be sure to run the backend from the root of the project.
-
-```bash
-cargo run
+cargo run -- config.toml
 ```
 
 6. To be able to login you need to create a user, you can do that by making a `POST` request to the `http://localhost:3030/admin/users` endpoint with a `secret_code` in the body of the request.

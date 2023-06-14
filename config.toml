@@ -1,0 +1,7 @@
+address = "127.0.0.1:3030"
+database = "postgresql://postgres:password@localhost:5432/trantor"
+
+# Uncomment the following to enable `https` support
+# [https]
+# cert_path = "/etc/letsencrypt/live/trantor.frectonz.tech/fullchain.pem"
+# key_path = "/etc/letsencrypt/live/trantor.frectonz.tech/privkey.pem"
