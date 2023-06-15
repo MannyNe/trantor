@@ -1,0 +1,16 @@
+[Unit]
+Description = trantor
+
+[Service]
+Type           = simple
+User           = root
+Group          = root
+LimitNOFILE    = 4096
+Restart        = always
+RestartSec     = 5s
+StandardOutput = append:/trantor/logs.log
+StandardError  = append:/trantor/errors.log
+ExecStart      = /trantor/trantor /trantor/config.toml
+
+[Install]
+WantedBy = multi-user.target
