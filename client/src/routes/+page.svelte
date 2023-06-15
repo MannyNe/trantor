@@ -142,6 +142,7 @@
 		font-size: 1.5rem;
 		font-family: 'Press Start 2P', cursive;
 		margin-bottom: 1rem;
+		text-align: center;
 	}
 
 	.stats {
