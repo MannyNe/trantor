@@ -24,7 +24,7 @@
 		justify-content: center;
 		flex-direction: column;
 		gap: 1rem;
-		width: 100vw;
+		width: 100%;
 		height: 100%;
 		font-family: monospace;
 	}

@@ -490,7 +490,7 @@ impl DB {
                 LEFT JOIN visitors ON visitors.source_id = sources.id
                 LEFT JOIN sessions ON sessions.visitor_id = visitors.id
             WHERE sources.tracking_id = $1
-            GROUP BY sources.name, sources.created_at
+            GROUP BY sources.name 
             "#,
             tracking_id
         )

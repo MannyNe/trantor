@@ -5,18 +5,10 @@
 	import { page } from '$app/stores';
 	import Tabs from '$lib/components/Tabs.svelte';
 	import Chart from '$lib/components/Chart.svelte';
-	import NoData from '$lib/components/NoData.svelte';
 
 	type CustomChartData<T extends ChartType> = ChartData<T, number[], string>;
 
 	export let data: LayoutData;
-
-	const totalVisitors = data.tracking.visitor_count_by_weekday.reduce(
-		(acc, curr) => acc + curr.count,
-		0
-	);
-
-	const noData = totalVisitors === 0;
 
 	const weekdayToString: Record<number, string> = {
 		0: 'Sun',
@@ -113,72 +105,64 @@
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 
-{#if noData}
-	<NoData origin={$page.url.origin} trackingId={$page.params.id} />
-{:else}
-	<div class="app">
-		<h1>Tracking data for <span>{data.tracking.name}</span></h1>
+<div class="app">
+	<h1>Tracking data for <span>{data.tracking.name}</span></h1>
 
-		<div class="tracking-id">
-			<div>
-				<p>Tracking ID</p>
-				<h3>{$page.params.id}</h3>
-			</div>
-			<button on:click={copyTrackingId}>Copy</button>
+	<div class="tracking-id">
+		<div>
+			<p>Tracking ID</p>
+			<h3>{$page.params.id}</h3>
 		</div>
-
-		<section class="stats">
-			<div>
-				<Chart
-					title="Sessions and Visitors Per Day"
-					type="bar"
-					data={sessionsAndVisitorsChartData}
-				/>
-			</div>
-			<div>
-				<Chart
-					type="radar"
-					title="Sessions and Visitors Per Hour"
-					data={sessionsAndVisitorsByHourChartData}
-				/>
-			</div>
-			<div>
-				<Chart title="Visitors By Browser" type="doughnut" data={visitorsCountByBrowser} />
-			</div>
-			<div>
-				<Chart title="Visitors By OS" type="doughnut" data={visitorsCountByOs} />
-			</div>
-			<div>
-				<Chart title="Visitors By Device" type="doughnut" data={visitorsCountByDevice} />
-			</div>
-		</section>
-
-		<section class="tab-container">
-			<header>
-				<Tabs
-					tabs={[
-						{
-							icon: { emoji: '📈', label: 'chart icon' },
-							name: 'Stats',
-							path: `/trackings/${$page.params.id}`,
-							active: $page.url.pathname === `/trackings/${$page.params.id}`
-						},
-						{
-							icon: { emoji: '⚙️', label: 'gear icon' },
-							name: 'Settings',
-							path: `/trackings/${$page.params.id}/settings`,
-							active: $page.url.pathname === `/trackings/${$page.params.id}/settings`
-						}
-					]}
-				/>
-			</header>
-
-			<main>
-				<slot />
-			</main>
-		</section>
+		<button on:click={copyTrackingId}>Copy</button>
 	</div>
-{/if}
+
+	<section class="stats">
+		<div>
+			<Chart title="Sessions and Visitors Per Day" type="bar" data={sessionsAndVisitorsChartData} />
+		</div>
+		<div>
+			<Chart
+				type="radar"
+				title="Sessions and Visitors Per Hour"
+				data={sessionsAndVisitorsByHourChartData}
+			/>
+		</div>
+		<div>
+			<Chart title="Visitors By Browser" type="doughnut" data={visitorsCountByBrowser} />
+		</div>
+		<div>
+			<Chart title="Visitors By OS" type="doughnut" data={visitorsCountByOs} />
+		</div>
+		<div>
+			<Chart title="Visitors By Device" type="doughnut" data={visitorsCountByDevice} />
+		</div>
+	</section>
+
+	<section class="tab-container">
+		<header>
+			<Tabs
+				tabs={[
+					{
+						icon: { emoji: '📈', label: 'chart icon' },
+						name: 'Stats',
+						path: `/trackings/${$page.params.id}`,
+						active: $page.url.pathname === `/trackings/${$page.params.id}`
+					},
+					{
+						icon: { emoji: '⚙️', label: 'gear icon' },
+						name: 'Settings',
+						path: `/trackings/${$page.params.id}/settings`,
+						active: $page.url.pathname === `/trackings/${$page.params.id}/settings`
+					}
+				]}
+			/>
+		</header>
+
+		<main>
+			<slot />
+		</main>
+	</section>
+</div>
 
 <style>
 	.app {

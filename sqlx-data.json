@@ -136,6 +136,38 @@
     },
     "query": "\n            SELECT COUNT(DISTINCT sessions.id) as \"count!\",\n                sessions.title as title\n            FROM sessions\n            WHERE tracking_id = $1\n            GROUP BY title\n        "
   },
+  "344b82fe24c2fa8e68e149ff37fe1aeb87cd414d5f2c51a2e336f1b789293f44": {
+    "describe": {
+      "columns": [
+        {
+          "name": "name",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "visitor_count!",
+          "ordinal": 1,
+          "type_info": "Int8"
+        },
+        {
+          "name": "session_count!",
+          "ordinal": 2,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT sources.name as name,\n                COUNT(DISTINCT visitors.id) as \"visitor_count!\",\n                COUNT(DISTINCT sessions.id) as \"session_count!\"\n            FROM sources \n                LEFT JOIN visitors ON visitors.source_id = sources.id\n                LEFT JOIN sessions ON sessions.visitor_id = visitors.id\n            WHERE sources.tracking_id = $1\n            GROUP BY sources.name \n            "
+  },
   "3621bc8dbc44dcb32088f8245bceab05f4f9380f9c4f4a30b730e84a0857943a": {
     "describe": {
       "columns": [
@@ -242,38 +274,6 @@
       }
     },
     "query": "\n            SELECT COUNT(id) as \"count!\",\n                EXTRACT(HOUR FROM start_timestamp) as \"hour!\"\n            FROM sessions\n            WHERE tracking_id = $1\n            GROUP BY \"hour!\"\n        "
-  },
-  "5b82986a2825d0959759f746cc5730c50e98ddcc7e81ebe73e155c006898cf85": {
-    "describe": {
-      "columns": [
-        {
-          "name": "name",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "visitor_count!",
-          "ordinal": 1,
-          "type_info": "Int8"
-        },
-        {
-          "name": "session_count!",
-          "ordinal": 2,
-          "type_info": "Int8"
-        }
-      ],
-      "nullable": [
-        false,
-        null,
-        null
-      ],
-      "parameters": {
-        "Left": [
-          "Int4"
-        ]
-      }
-    },
-    "query": "\n            SELECT sources.name as name,\n                COUNT(DISTINCT visitors.id) as \"visitor_count!\",\n                COUNT(DISTINCT sessions.id) as \"session_count!\"\n            FROM sources \n                LEFT JOIN visitors ON visitors.source_id = sources.id\n                LEFT JOIN sessions ON sessions.visitor_id = visitors.id\n            WHERE sources.tracking_id = $1\n            GROUP BY sources.name, sources.created_at\n            "
   },
   "67b3629dac9a4320baa79f710d0ef0aa7cde4c6d723d0c394a58e27e8a9e456f": {
     "describe": {
