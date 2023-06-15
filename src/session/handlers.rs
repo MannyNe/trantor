@@ -13,14 +13,19 @@ use crate::{
 
 pub async fn extract_source_id(
     db: DB,
+    tracking_id: i32,
     source_name: Option<String>,
 ) -> Result<(DB, Option<i32>), reject::Rejection> {
     tracing::info!("Extracting source name: {:?}", source_name);
     let id = match source_name {
-        Some(source_name) => Some(db.id_from_source_name(&source_name).await.map_err(|e| {
-            tracing::error!("Error getting source id: {}", e);
-            reject::custom(DatabaseError)
-        })?),
+        Some(source_name) => Some(
+            db.id_from_source_name(tracking_id, &source_name)
+                .await
+                .map_err(|e| {
+                    tracing::error!("Error getting source id: {}", e);
+                    reject::custom(DatabaseError)
+                })?,
+        ),
         None => None,
     };
 

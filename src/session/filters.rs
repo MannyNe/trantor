@@ -13,11 +13,11 @@ pub fn make_session_routes(
     let ua_parser_filter = warp::any().map(move || ua_parser.clone());
 
     let visitor_id = with_db(db.clone())
-        .and(warp::header::optional::<String>("x-source-name"))
-        .and_then(handlers::extract_source_id)
         .and(warp::header("x-tracking-id"))
-        .and_then(|(db, source_id), tracking_id| async move {
-            let (db, tracking_id) = handlers::extract_tracking_id(db, tracking_id).await?;
+        .and_then(handlers::extract_tracking_id)
+        .and(warp::header::optional::<String>("x-source-name"))
+        .and_then(|(db, tracking_id), source_id| async move {
+            let (db, source_id) = handlers::extract_source_id(db, tracking_id, source_id).await?;
             Ok::<_, warp::Rejection>((db, source_id, tracking_id))
         })
         .and(warp::cookie::optional("visitorId"))

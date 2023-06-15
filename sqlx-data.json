@@ -56,26 +56,6 @@
     },
     "query": "SELECT COUNT(id) as count FROM sources"
   },
-  "14256c0080d053675638cfebe60dfce4e1dc0959f0836f8180840c8ff7123578": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int4"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "SELECT id FROM sources WHERE name = $1"
-  },
   "18970043ed9c51e33e330ba941526baef8c2c180fecf62d60a0442584072c364": {
     "describe": {
       "columns": [],
@@ -248,6 +228,27 @@
       }
     },
     "query": "\n            SELECT trackings.tracking_id as id,\n                trackings.name as name,\n                trackings.created_at as created_at,\n                COUNT(DISTINCT visitors.id) as visitor_count,\n                COUNT(DISTINCT sessions.id) as sessions_count,\n                COUNT(DISTINCT events.id) as events_count,\n                COUNT(DISTINCT sources.id) as sources_count\n            FROM trackings\n                LEFT JOIN visitors ON visitors.tracking_id = trackings.id\n                LEFT JOIN sessions ON sessions.tracking_id = trackings.id\n                LEFT JOIN events ON events.tracking_id = trackings.id\n                LEFT JOIN sources ON sources.tracking_id = trackings.id\n            WHERE trackings.owner_id = $1 \n            GROUP BY trackings.tracking_id, trackings.name, trackings.created_at\n        "
+  },
+  "563b772ba7a6b01ea1d66033c7da51568aa41ab05bb0dc987d9aa9d854f23192": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT id FROM sources WHERE tracking_id = $1 AND name = $2"
   },
   "58ffb39029556da588544036a2cca2caec32d18bed620c4d2aee690848742e1b": {
     "describe": {

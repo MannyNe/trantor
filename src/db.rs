@@ -35,10 +35,14 @@ impl DB {
         Ok(rec.id)
     }
 
-    pub async fn id_from_source_name(&self, name: &str) -> Result<i32> {
-        let rec = sqlx::query!(r#"SELECT id FROM sources WHERE name = $1"#, name)
-            .fetch_one(&self.pool)
-            .await?;
+    pub async fn id_from_source_name(&self, tracking_id: i32, name: &str) -> Result<i32> {
+        let rec = sqlx::query!(
+            r#"SELECT id FROM sources WHERE tracking_id = $1 AND name = $2"#,
+            tracking_id,
+            name
+        )
+        .fetch_one(&self.pool)
+        .await?;
 
         Ok(rec.id)
     }
