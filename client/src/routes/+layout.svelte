@@ -44,6 +44,7 @@
 
 	img {
 		width: 30px;
+		height: 55px;
 	}
 
 	h1 {
