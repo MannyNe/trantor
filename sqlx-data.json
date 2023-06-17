@@ -574,6 +574,38 @@
     },
     "query": "\n            SELECT COUNT(id) as \"count!\",\n                EXTRACT(DOW FROM start_timestamp) as \"weekday!\"\n            FROM sessions\n            WHERE tracking_id = $1\n            GROUP BY \"weekday!\"\n        "
   },
+  "d51714108760df97f2da2735ea36791cc96f0160bd1db154e206e51a73050c69": {
+    "describe": {
+      "columns": [
+        {
+          "name": "country_iso_code",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "country_name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "count!",
+          "ordinal": 2,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null,
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT location->'country'->>'iso_code' as country_iso_code,\n                location->'country'->'names'->>'en' as country_name,\n                COUNT(id) as \"count!\"\n            FROM sessions\n            WHERE tracking_id = $1\n            GROUP BY country_iso_code, country_name"
+  },
   "dcf8893a70d5774ee90deda0501d02f5d633f16b8df83b924efd20a0111b1b56": {
     "describe": {
       "columns": [],

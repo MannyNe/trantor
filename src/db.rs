@@ -141,6 +141,13 @@ pub struct CountByTitle {
     count: i64,
 }
 
+#[derive(FromRow, Serialize)]
+pub struct CountByCountry {
+    country_iso_code: Option<String>,
+    country_name: Option<String>,
+    count: i64,
+}
+
 impl DB {
     pub async fn create_visitor(&self, data: &NewVisitorData) -> Result<i32> {
         let rec = sqlx::query!(
@@ -454,6 +461,24 @@ impl DB {
             WHERE tracking_id = $1
             GROUP BY title
         "#,
+            tracking_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn count_sessions_by_country(&self, tracking_id: i32) -> Result<Vec<CountByCountry>> {
+        let rec = sqlx::query_as!(
+            CountByCountry,
+            r#"
+            SELECT location->'country'->>'iso_code' as country_iso_code,
+                location->'country'->'names'->>'en' as country_name,
+                COUNT(id) as "count!"
+            FROM sessions
+            WHERE tracking_id = $1
+            GROUP BY country_iso_code, country_name"#,
             tracking_id
         )
         .fetch_all(&self.pool)

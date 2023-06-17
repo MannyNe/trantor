@@ -2,9 +2,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     db::{
-        CountByBrowser, CountByDevice, CountByHour, CountByOs, CountByPathname, CountByTitle,
-        CountByWeekday, NewTrackingData, NewUserData, SingleReferer, SingleSource, SingleTracking,
-        DB,
+        CountByBrowser, CountByCountry, CountByDevice, CountByHour, CountByOs, CountByPathname,
+        CountByTitle, CountByWeekday, NewTrackingData, NewUserData, SingleReferer, SingleSource,
+        SingleTracking, DB,
     },
     errors::DatabaseError,
 };
@@ -202,6 +202,7 @@ struct TrackingCountsResponse {
     paths: Vec<CountByPathname>,
     titles: Vec<CountByTitle>,
     refers: Vec<SingleReferer>,
+    countries: Vec<CountByCountry>,
 }
 
 pub async fn tracking_counts(
@@ -239,11 +240,20 @@ pub async fn tracking_counts(
         warp::reject::custom(DatabaseError)
     })?;
 
+    let countries = db
+        .count_sessions_by_country(tracking_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("Error counting sessions by country: {}", e);
+            warp::reject::custom(DatabaseError)
+        })?;
+
     Ok(warp::reply::json(&TrackingCountsResponse {
         sources,
         paths,
         titles,
         refers,
+        countries,
     }))
 }
 
