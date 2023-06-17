@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { getAuthToken } from '$lib/auth';
 	import { invalidateAll } from '$app/navigation';
+	import Map from '$lib/components/Map.svelte';
 	import NoData from '$lib/components/NoData.svelte';
 
 	export let data: PageData;
@@ -52,6 +53,12 @@
 			await invalidateAll();
 		}
 	}
+
+	const isoCodeToData: Record<string, number> = {};
+	for (const country of data.countries) {
+		isoCodeToData[country.iso_code] = country.count;
+	}
+	const max = data.countries[0].count;
 </script>
 
 {#if noData}
@@ -184,6 +191,10 @@
 			</table>
 		</section>
 	</div>
+
+	<section class="map">
+		<Map {isoCodeToData} {max} />
+	</section>
 {/if}
 
 <style>
@@ -317,5 +328,12 @@
 		padding: 0.2rem;
 		color: white;
 		background-color: black;
+	}
+
+	.map {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 </style>
