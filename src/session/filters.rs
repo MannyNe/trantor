@@ -8,6 +8,7 @@ use crate::db::{with_db, DB};
 pub fn make_session_routes(
     db: DB,
     ua_parser: uaparser::UserAgentParser,
+    maxmind_reader: Arc<maxminddb::Reader<Vec<u8>>>,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     let ua_parser = Arc::new(ua_parser);
     let ua_parser_filter = warp::any().map(move || ua_parser.clone());
@@ -50,10 +51,22 @@ pub fn make_session_routes(
         })
         .and(visitor_id)
         .and(warp::body::json::<SessionStart>())
-        .and_then(|(db, tracking_id), visitor_id, session_start| async move {
-            let reply = handlers::session_start(db, tracking_id, visitor_id, session_start).await?;
-            Ok::<_, warp::Rejection>(reply)
-        });
+        .and(warp::addr::remote())
+        .and(warp::any().map(move || maxmind_reader.clone()))
+        .and_then(
+            |(db, tracking_id), visitor_id, session_start, socket_addr, maxmind_reader| async move {
+                let reply = handlers::session_start(
+                    db,
+                    tracking_id,
+                    visitor_id,
+                    session_start,
+                    socket_addr,
+                    maxmind_reader,
+                )
+                .await?;
+                Ok::<_, warp::Rejection>(reply)
+            },
+        );
 
     let session_id =
         warp::cookie::optional::<String>("sessionId").and_then(handlers::extract_session_id);

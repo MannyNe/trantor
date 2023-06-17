@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{net::SocketAddr, sync::Arc};
 
 use serde::Deserialize;
 use warp::{
@@ -101,6 +101,8 @@ pub async fn session_start(
         title,
         pathname,
     }: SessionStart,
+    remote_addr: Option<SocketAddr>,
+    maxmind_reader: Arc<maxminddb::Reader<Vec<u8>>>,
 ) -> Result<impl warp::Reply, reject::Rejection> {
     tracing::info!("session-start");
     tracing::info!("visitor_id: {}", visitor_id);
@@ -108,7 +110,15 @@ pub async fn session_start(
     tracing::info!("title: {}", title);
     tracing::info!("pathname: {}", pathname);
 
-    let new_session = NewSessionData::new(visitor_id, timestamp, title, pathname, tracking_id);
+    let new_session = NewSessionData::new(
+        visitor_id,
+        timestamp,
+        title,
+        pathname,
+        tracking_id,
+        remote_addr,
+        maxmind_reader,
+    );
 
     db.create_session(&new_session).await.map_err(|e| {
         tracing::error!("Error creating session: {}", e);

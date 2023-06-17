@@ -7,7 +7,7 @@ pub mod utils;
 
 pub use sqlx;
 
-use std::path::Path;
+use std::{path::Path, sync::Arc};
 
 use db::DB;
 use include_dir::{include_dir, Dir, File};
@@ -23,6 +23,7 @@ const LAUNCH_CONTROL_JS: &str = include_str!("../data/launch-control.js");
 
 pub async fn server(
     pool: PgPool,
+    maxmind_reader: Arc<maxminddb::Reader<Vec<u8>>>,
 ) -> Result<
     impl Filter<Extract = (impl warp::Reply + Send,), Error = warp::Rejection> + Clone,
     sqlx::Error,
@@ -33,7 +34,7 @@ pub async fn server(
     let ua_parser = UserAgentParser::from_bytes(REGEXES).expect("Failed to make user agent parser");
 
     let admin_routes = admin::make_admin_routes(db.clone());
-    let session_routes = session::make_session_routes(db, ua_parser);
+    let session_routes = session::make_session_routes(db, ua_parser, maxmind_reader);
 
     let cors = warp::cors()
         .allow_any_origin()

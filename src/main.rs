@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
 use color_eyre::{
     eyre::{eyre, Context},
@@ -27,7 +27,16 @@ async fn main() -> Result<()> {
         .await
         .wrap_err_with(|| format!("couldn't connect to database with url: {}", config.database))?;
 
-    let routes = server(pool).await?;
+    let maxmind_reader =
+        maxminddb::Reader::open_readfile(&config.geolite2_city).wrap_err_with(|| {
+            format!(
+                "couldn't open geolite2 city database file: {}",
+                config.geolite2_city
+            )
+        })?;
+    let maxmind_reader = Arc::new(maxmind_reader);
+
+    let routes = server(pool, maxmind_reader).await?;
     let addr: SocketAddr = config.address.parse()?;
 
     if let Some(https) = config.https {
@@ -61,6 +70,7 @@ async fn main() -> Result<()> {
 struct Config {
     address: String,
     database: String,
+    geolite2_city: String,
     https: Option<Https>,
 }
 

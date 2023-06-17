@@ -229,6 +229,24 @@
     },
     "query": "\n            SELECT trackings.tracking_id as id,\n                trackings.name as name,\n                trackings.created_at as created_at,\n                COUNT(DISTINCT visitors.id) as visitor_count,\n                COUNT(DISTINCT sessions.id) as sessions_count,\n                COUNT(DISTINCT events.id) as events_count,\n                COUNT(DISTINCT sources.id) as sources_count\n            FROM trackings\n                LEFT JOIN visitors ON visitors.tracking_id = trackings.id\n                LEFT JOIN sessions ON sessions.tracking_id = trackings.id\n                LEFT JOIN events ON events.tracking_id = trackings.id\n                LEFT JOIN sources ON sources.tracking_id = trackings.id\n            WHERE trackings.owner_id = $1 \n            GROUP BY trackings.tracking_id, trackings.name, trackings.created_at\n        "
   },
+  "45da8cd6d03db57156d67949af03d828a0a7368fb665cd67888db64d41b36094": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Bpchar",
+          "Int4",
+          "Float8",
+          "Varchar",
+          "Varchar",
+          "Int4",
+          "Json"
+        ]
+      }
+    },
+    "query": "INSERT INTO sessions (session_id, visitor_id, start_timestamp, title, pathname, tracking_id, location)\n            VALUES ($1, $2, TO_TIMESTAMP($3), $4, $5, $6, $7)"
+  },
   "563b772ba7a6b01ea1d66033c7da51568aa41ab05bb0dc987d9aa9d854f23192": {
     "describe": {
       "columns": [
@@ -596,23 +614,6 @@
       }
     },
     "query": "\n            SELECT COUNT(DISTINCT sessions.id) as \"count!\",\n                sessions.pathname as pathname\n            FROM sessions\n            WHERE tracking_id = $1\n            GROUP BY pathname\n        "
-  },
-  "e4147482dcb163add317b863ee2ed21f62c960733cadc32cdcaa4d7a0011ae2c": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Bpchar",
-          "Int4",
-          "Float8",
-          "Varchar",
-          "Varchar",
-          "Int4"
-        ]
-      }
-    },
-    "query": "INSERT INTO sessions (session_id, visitor_id, start_timestamp, title, pathname, tracking_id)\n            VALUES ($1, $2, TO_TIMESTAMP($3), $4, $5, $6)"
   },
   "e5cd553ff660d18c0bf48fd0086e5dc6431aa8de2a3ffd9e213e20409e723588": {
     "describe": {

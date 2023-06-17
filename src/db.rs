@@ -1,5 +1,6 @@
-use std::{convert::Infallible, sync::Arc};
+use std::{convert::Infallible, net::SocketAddr, sync::Arc};
 
+use maxminddb::geoip2;
 use serde::Serialize;
 use sqlx::{
     types::{chrono::NaiveDateTime, BigDecimal},
@@ -285,6 +286,7 @@ pub struct NewSessionData {
     title: String,
     pathname: String,
     tracking_id: i32,
+    location: Option<serde_json::Value>,
 }
 
 impl NewSessionData {
@@ -300,7 +302,15 @@ impl NewSessionData {
         title: String,
         pathname: String,
         tracking_id: i32,
+        remote_addr: Option<SocketAddr>,
+        maxmind_reader: Arc<maxminddb::Reader<Vec<u8>>>,
     ) -> Self {
+        let ip = remote_addr.map(|addr| addr.ip());
+        let location = ip.and_then(|ip| {
+            let location = maxmind_reader.lookup::<geoip2::City>(ip).ok();
+            location.map(|location| serde_json::to_value(location).unwrap())
+        });
+
         Self {
             session_id: utils::generate_id(),
             visitor_id,
@@ -308,6 +318,7 @@ impl NewSessionData {
             title,
             pathname,
             tracking_id,
+            location,
         }
     }
 }
@@ -315,14 +326,15 @@ impl NewSessionData {
 impl DB {
     pub async fn create_session(&self, data: &NewSessionData) -> Result<()> {
         sqlx::query!(
-            r#"INSERT INTO sessions (session_id, visitor_id, start_timestamp, title, pathname, tracking_id)
-            VALUES ($1, $2, TO_TIMESTAMP($3), $4, $5, $6)"#,
+            r#"INSERT INTO sessions (session_id, visitor_id, start_timestamp, title, pathname, tracking_id, location)
+            VALUES ($1, $2, TO_TIMESTAMP($3), $4, $5, $6, $7)"#,
             data.session_id,
             data.visitor_id,
             data.start_timestamp,
             data.title,
             data.pathname,
-            data.tracking_id
+            data.tracking_id,
+            data.location
         )
         .execute(&self.pool)
         .await?;
