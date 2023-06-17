@@ -58,7 +58,7 @@
 	for (const country of data.countries) {
 		isoCodeToData[country.iso_code] = country.count;
 	}
-	const max = data.countries[0].count;
+	const max = data.countries[0]?.count || 0;
 </script>
 
 {#if noData}
