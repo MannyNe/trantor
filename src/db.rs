@@ -143,8 +143,8 @@ pub struct CountByTitle {
 
 #[derive(FromRow, Serialize)]
 pub struct CountByCountry {
-    country_iso_code: Option<String>,
-    country_name: Option<String>,
+    name: Option<String>,
+    iso_code: Option<String>,
     count: i64,
 }
 
@@ -473,12 +473,12 @@ impl DB {
         let rec = sqlx::query_as!(
             CountByCountry,
             r#"
-            SELECT location->'country'->>'iso_code' as country_iso_code,
-                location->'country'->'names'->>'en' as country_name,
+            SELECT location->'country'->>'iso_code' as iso_code,
+                location->'country'->'names'->>'en' as name,
                 COUNT(id) as "count!"
             FROM sessions
             WHERE tracking_id = $1
-            GROUP BY country_iso_code, country_name"#,
+            GROUP BY iso_code, name"#,
             tracking_id
         )
         .fetch_all(&self.pool)

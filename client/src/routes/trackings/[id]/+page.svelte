@@ -128,7 +128,7 @@
 
 	<div class="two-columns">
 		<section class="table-container">
-			<h1>Page Titles</h1>
+			<h1>Pages</h1>
 
 			<table>
 				<thead>
@@ -145,7 +145,7 @@
 		</section>
 
 		<section class="table-container">
-			<h1>Referer counts</h1>
+			<h1>Referrers</h1>
 
 			<table>
 				<thead>
@@ -158,6 +158,27 @@
 						<td>{refer.referer}</td>
 						<td>{refer.session_count}</td>
 						<td>{refer.visitor_count}</td>
+					</tr>
+				{/each}
+			</table>
+		</section>
+	</div>
+
+	<div class="two-columns">
+		<section class="table-container">
+			<h1>Countries</h1>
+
+			<table>
+				<thead>
+					<th>Country</th>
+					<th>ISO Code</th>
+					<th style="border-right: 1px solid #000;">Session Count</th>
+				</thead>
+				{#each data.countries as country}
+					<tr>
+						<td>{country.name}</td>
+						<td>{country.iso_code}</td>
+						<td>{country.count}</td>
 					</tr>
 				{/each}
 			</table>

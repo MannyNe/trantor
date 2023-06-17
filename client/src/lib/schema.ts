@@ -10,6 +10,16 @@ const browserCountSchema = countSchema.extend({ browser: z.string() });
 const deviceCountSchema = countSchema.extend({ device: z.string() });
 const pathCountSchema = countSchema.extend({ pathname: z.string() });
 const titleCountSchema = countSchema.extend({ title: z.string() });
+const countryCountSchema = countSchema.extend({
+	name: z
+		.string()
+		.nullable()
+		.transform((v) => v ?? 'Unknown'),
+	iso_code: z
+		.string()
+		.nullable()
+		.transform((v) => v ?? 'Unknown')
+});
 
 export const TrackingDataSchema = z.object({
 	name: z.string(),
@@ -48,13 +58,15 @@ const VisitorAndSessionCount = z.object({
 const SourceSchema = VisitorAndSessionCount.extend({ name: z.string() });
 const RefererSchema = VisitorAndSessionCount.extend({ referer: z.string() });
 
+const countSort = <T extends { count: number }>(list: T[]) =>
+	list.sort((a, b) => b.count - a.count);
+const sessionSort = <T extends { session_count: number }>(list: T[]) =>
+	list.sort((a, b) => b.session_count - a.session_count);
+
 export const TrackingCounts = z.object({
-	sources: z
-		.array(SourceSchema)
-		.transform((v) => v.sort((a, b) => b.session_count - a.session_count)),
-	paths: z.array(pathCountSchema).transform((v) => v.sort((a, b) => b.count - a.count)),
-	titles: z.array(titleCountSchema).transform((v) => v.sort((a, b) => b.count - a.count)),
-	refers: z
-		.array(RefererSchema)
-		.transform((v) => v.sort((a, b) => b.session_count - a.session_count))
+	sources: z.array(SourceSchema).transform(sessionSort),
+	paths: z.array(pathCountSchema).transform(countSort),
+	titles: z.array(titleCountSchema).transform(countSort),
+	refers: z.array(RefererSchema).transform(sessionSort),
+	countries: z.array(countryCountSchema).transform(countSort)
 });
