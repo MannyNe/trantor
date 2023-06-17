@@ -1127,6 +1127,7 @@
 		color: black;
 		background: white;
 		border: 1px solid black;
+		display: none;
 	}
 
 	.map__tooltip__title {
