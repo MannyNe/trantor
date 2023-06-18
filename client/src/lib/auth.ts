@@ -1,3 +1,4 @@
+import { browser } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
 
 type AuthState = {
@@ -8,6 +9,7 @@ type AuthState = {
 const AUTH_STATE_KEY = 'AUTH_STATE';
 
 export function getAuthState() {
+	if(!browser) return null; 
 	const stored = localStorage.getItem(AUTH_STATE_KEY);
 	if (stored === null) return null;
 	else return JSON.parse(stored) as AuthState;
@@ -17,7 +19,7 @@ export function getAuthToken() {
 	const auth = getAuthState();
 
 	if (auth === null) {
-		throw redirect(300, '/login');
+		throw redirect(303, '/login');
 	}
 
 	return btoa(`${auth.userId}:${auth.secretCode}`);

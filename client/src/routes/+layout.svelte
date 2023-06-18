@@ -1,8 +1,12 @@
 <script lang="ts">
 	import './styles.css';
 	import { authState, initAuth } from '$lib/auth.store';
+	import { onMount } from 'svelte';
 
-	initAuth();
+	onMount(() => {
+		initAuth();
+	});
+
 </script>
 
 <section>
