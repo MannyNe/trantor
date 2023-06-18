@@ -18,6 +18,32 @@
     },
     "query": "SELECT COUNT(id) as count FROM sessions"
   },
+  "0657c2c0044b326195211e13b532117cc34d1cff70c17f892bacaa425f1de7bf": {
+    "describe": {
+      "columns": [
+        {
+          "name": "referral",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "count!",
+          "ordinal": 1,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        true,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n            SELECT referral, COUNT(id) as \"count!\"\n            FROM sessions\n            WHERE tracking_id = $1\n            GROUP BY referral"
+  },
   "07354ecf3652fd85bc22da4c2c9dd9d029e97c1e875f92c4ff06af2a0cfbb7df": {
     "describe": {
       "columns": [

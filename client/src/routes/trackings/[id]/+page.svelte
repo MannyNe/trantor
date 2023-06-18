@@ -190,6 +190,23 @@
 				{/each}
 			</table>
 		</section>
+
+		<section class="table-container">
+			<h1>Referrals</h1>
+
+			<table>
+				<thead>
+					<th>Referral</th>
+					<th style="border-right: 1px solid #000;">Session Count</th>
+				</thead>
+				{#each data.referrals as referral}
+					<tr>
+						<td>{referral.referral}</td>
+						<td>{referral.count}</td>
+					</tr>
+				{/each}
+			</table>
+		</section>
 	</div>
 
 	<section class="map">

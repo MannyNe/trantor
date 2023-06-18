@@ -20,6 +20,12 @@ const countryCountSchema = countSchema.extend({
 		.nullable()
 		.transform((v) => v ?? 'Unknown')
 });
+const referralCountSchema = countSchema.extend({
+	referral: z
+		.string()
+		.nullable()
+		.transform((v) => v ?? 'Unknown')
+});
 
 export const TrackingDataSchema = z.object({
 	name: z.string(),
@@ -68,5 +74,6 @@ export const TrackingCounts = z.object({
 	paths: z.array(pathCountSchema).transform(countSort),
 	titles: z.array(titleCountSchema).transform(countSort),
 	refers: z.array(RefererSchema).transform(sessionSort),
-	countries: z.array(countryCountSchema).transform(countSort)
+	countries: z.array(countryCountSchema).transform(countSort),
+	referrals: z.array(referralCountSchema).transform(countSort)
 });

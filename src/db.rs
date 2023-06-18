@@ -148,6 +148,12 @@ pub struct CountByCountry {
     count: i64,
 }
 
+#[derive(FromRow, Serialize)]
+pub struct CountByReferral {
+    referral: Option<String>,
+    count: i64,
+}
+
 impl DB {
     pub async fn create_visitor(&self, data: &NewVisitorData) -> Result<i32> {
         let rec = sqlx::query!(
@@ -483,6 +489,25 @@ impl DB {
             FROM sessions
             WHERE tracking_id = $1
             GROUP BY iso_code, name"#,
+            tracking_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn count_sessions_by_referral(
+        &self,
+        tracking_id: i32,
+    ) -> Result<Vec<CountByReferral>> {
+        let rec = sqlx::query_as!(
+            CountByReferral,
+            r#"
+            SELECT referral, COUNT(id) as "count!"
+            FROM sessions
+            WHERE tracking_id = $1
+            GROUP BY referral"#,
             tracking_id
         )
         .fetch_all(&self.pool)
