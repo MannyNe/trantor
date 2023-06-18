@@ -18,7 +18,7 @@ Trantor is a simple analytics server that focuses on websites made to market and
 
 ### ⚠️ **Trantor** is still in early development, and is not ready for production use yet, issues and pull requests are welcome
 
-## Running the project
+## Running the project locally
 
 1. Clone the repository
 
@@ -85,3 +85,21 @@ Anyway you make this request, the server will respond with a `user_id` and a `se
 7. Now you can visit the dashboard at <http://localhost:3030>. Where you can login with a `user_id` and `secret_code` combination.
 
 8. Success 🎉, you should now be able to create trackings and view analytics.
+
+## Running the project in Docker
+
+- You can run this project in a containerized environment. You can build the image by runnung the `docker_init.sh` file by passing the version of the build (or not, for the `trantor:latest` tag).
+
+### Steps
+
+1. Clone the repository
+
+```bash
+git clone git@github.com:frectonz/trantor.git
+```
+
+2. Run the `docker_init.sh` file from root, then wait for the build and run to finish. (Ex: `./docker_init.sh v0.1.0`)
+
+3. Success 🎉, you should now be able to create trackings and view analytics.
+
+- Use the startup script for building the image and for building the image after changes to the code. You can use the docker-compose commands for anything else.

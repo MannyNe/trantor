@@ -1,0 +1,10 @@
+Dockerfile
+docker-compose.yaml
+LICENSE
+.dockerignore
+README.md
+pgDB
+.envrc
+.gitignore
+.envrc.template
+docker_init.sh
