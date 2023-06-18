@@ -1,0 +1,2 @@
+ALTER TABLE sessions
+ADD COLUMN referral VARCHAR(255) NULL;

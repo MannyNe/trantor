@@ -54,9 +54,19 @@ class LaunchControl {
     const url = new URL(window.location.href);
     if (!url.searchParams.has("src")) return null;
 
-    const src = url.searchParams.get("src");
-    window.history.replaceState({}, "", url.pathname);
-    return src;
+    return url.searchParams.get("src");
+  }
+
+  /**
+   * Extracts the referral from the URL.
+   * @private
+   * @returns {Promise<string|null>} The referral or null.
+   */
+  async extractReferral() {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("ref")) return null;
+
+    return url.searchParams.get("ref");
   }
 
   /**
@@ -71,6 +81,7 @@ class LaunchControl {
     headers.append("Content-Type", "application/json");
     headers.append("x-tracking-id", this.trackingId);
     const sourceName = await this.extractSourceName();
+    const referral = await this.extractReferral();
 
     if (sourceName) {
       headers.append("x-source-name", sourceName);
@@ -85,6 +96,7 @@ class LaunchControl {
         timestamp: Date.now() / 1000, // seconds
         pathname: window.location.pathname,
         title: document.title,
+        referral,
       }),
     });
   }

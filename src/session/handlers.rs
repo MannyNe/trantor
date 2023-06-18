@@ -90,6 +90,7 @@ pub struct SessionStart {
     timestamp: f64,
     title: String,
     pathname: String,
+    referral: Option<String>,
 }
 
 pub async fn session_start(
@@ -100,21 +101,19 @@ pub async fn session_start(
         timestamp,
         title,
         pathname,
+        referral,
     }: SessionStart,
     remote_addr: Option<SocketAddr>,
     maxmind_reader: Arc<maxminddb::Reader<Vec<u8>>>,
 ) -> Result<impl warp::Reply, reject::Rejection> {
     tracing::info!("session-start");
-    tracing::info!("visitor_id: {}", visitor_id);
-    tracing::info!("timestamp: {}", timestamp);
-    tracing::info!("title: {}", title);
-    tracing::info!("pathname: {}", pathname);
 
     let new_session = NewSessionData::new(
         visitor_id,
         timestamp,
         title,
         pathname,
+        referral,
         tracking_id,
         remote_addr,
         maxmind_reader,

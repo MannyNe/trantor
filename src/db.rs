@@ -292,6 +292,7 @@ pub struct NewSessionData {
     start_timestamp: f64,
     title: String,
     pathname: String,
+    referral: Option<String>,
     tracking_id: i32,
     location: Option<serde_json::Value>,
 }
@@ -305,9 +306,10 @@ impl NewSessionData {
 impl NewSessionData {
     pub fn new(
         visitor_id: i32,
-        start_timestamp: f64,
+        timestamp: f64,
         title: String,
         pathname: String,
+        referral: Option<String>,
         tracking_id: i32,
         remote_addr: Option<SocketAddr>,
         maxmind_reader: Arc<maxminddb::Reader<Vec<u8>>>,
@@ -321,9 +323,10 @@ impl NewSessionData {
         Self {
             session_id: utils::generate_id(),
             visitor_id,
-            start_timestamp,
+            start_timestamp: timestamp,
             title,
             pathname,
+            referral,
             tracking_id,
             location,
         }
@@ -333,15 +336,16 @@ impl NewSessionData {
 impl DB {
     pub async fn create_session(&self, data: &NewSessionData) -> Result<()> {
         sqlx::query!(
-            r#"INSERT INTO sessions (session_id, visitor_id, start_timestamp, title, pathname, tracking_id, location)
-            VALUES ($1, $2, TO_TIMESTAMP($3), $4, $5, $6, $7)"#,
+            r#"INSERT INTO sessions (session_id, visitor_id, start_timestamp, title, pathname, referral, tracking_id, location)
+            VALUES ($1, $2, TO_TIMESTAMP($3), $4, $5, $6, $7, $8)"#,
             data.session_id,
             data.visitor_id,
             data.start_timestamp,
             data.title,
             data.pathname,
+            data.referral,
             data.tracking_id,
-            data.location
+            data.location,
         )
         .execute(&self.pool)
         .await?;
