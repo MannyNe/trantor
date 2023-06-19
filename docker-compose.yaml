@@ -1,0 +1,29 @@
+version: '3.6'
+
+services:
+  trantor_db:
+    container_name: trantor_db
+    image: postgres:14.2-alpine
+    restart: always
+    # you can attach a volume so that your data can be saved. If you do, run docker_init.sh as sudo
+    # volumes:
+    # - ./backup/pgDB:/var/lib/postgresql/data
+    network_mode: host
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trantor"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+  trantor_backend:
+    container_name: trantor_backend
+    image: trantor_backend:latest
+    network_mode: host
+    restart: always
+    volumes:
+      - ./config.toml:/config.toml
+      - ./src:/src

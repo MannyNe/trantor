@@ -18,7 +18,7 @@ Trantor is a simple analytics server that focuses on websites made to market and
 
 ### ⚠️ **Trantor** is still in early development, and is not ready for production use yet, issues and pull requests are welcome
 
-## Running the project
+## Running the project locally
 
 1. Clone the repository
 
