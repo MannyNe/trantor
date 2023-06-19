@@ -26,6 +26,7 @@ RUN cargo run -- config.toml
 RUN rm src/*.rs
 RUN rm ./target/debug/deps/trantor*
 
+# ADD FILES FROM HOST TO CONTAINER
 ADD . ./
 
 RUN mkdir -p client/build
@@ -35,10 +36,3 @@ WORKDIR /trantor
 
 EXPOSE 3030
 CMD ["cargo", "run", "--", "config.toml"]
-
-#FROM scratch
-#WORKDIR /trantor
-#COPY --from=builder /trantor/config.toml .
-#COPY --from=builder /trantor/target/release/trantor .
-
-#CMD ["./trantor"]
