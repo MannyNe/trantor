@@ -85,3 +85,14 @@ Anyway you make this request, the server will respond with a `user_id` and a `se
 7. Now you can visit the dashboard at <http://localhost:3030>. Where you can login with a `user_id` and `secret_code` combination.
 
 8. Success 🎉, you should now be able to create trackings and view analytics.
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
