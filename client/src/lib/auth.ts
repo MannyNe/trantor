@@ -1,4 +1,3 @@
-import { browser } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
 
 type AuthState = {
@@ -9,7 +8,6 @@ type AuthState = {
 const AUTH_STATE_KEY = 'AUTH_STATE';
 
 export function getAuthState() {
-	if(!browser) return null; 
 	const stored = localStorage.getItem(AUTH_STATE_KEY);
 	if (stored === null) return null;
 	else return JSON.parse(stored) as AuthState;
