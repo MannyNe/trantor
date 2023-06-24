@@ -26,6 +26,13 @@ tracing = "0.1"
 toml = "0.7.4"
 color-eyre = "0.6.2"
 maxminddb = "0.23.0"
+async-trait = "0.1.68"
+thiserror = "1.0.40"
+
+domain = { path = "domain" }
 
 [profile.dev.package.sqlx-macros]
 opt-level = 3
+
+[workspace]
+members = ["domain", "pg-repositories", "services", "warp-controller"]

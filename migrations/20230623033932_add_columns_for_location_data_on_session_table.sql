@@ -1,0 +1,4 @@
+ALTER TABLE sessions
+ADD COLUMN country_code VARCHAR(2) NULL,
+  ADD COLUMN city_name VARCHAR(255) NULL,
+  ADD COLUMN continent_code VARCHAR(2) NULL;

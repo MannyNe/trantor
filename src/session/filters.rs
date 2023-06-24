@@ -17,8 +17,8 @@ pub fn make_session_routes(
         .and(warp::header("x-tracking-id"))
         .and_then(handlers::extract_tracking_id)
         .and(warp::header::optional::<String>("x-source-name"))
-        .and_then(|(db, tracking_id), source_id| async move {
-            let (db, source_id) = handlers::extract_source_id(db, tracking_id, source_id).await?;
+        .and_then(|(db, tracking_id), source_name| async move {
+            let (db, source_id) = handlers::extract_source_id(db, tracking_id, source_name).await?;
             Ok::<_, warp::Rejection>((db, source_id, tracking_id))
         })
         .and(warp::cookie::optional("visitorId"))
@@ -54,13 +54,13 @@ pub fn make_session_routes(
         .and(warp::addr::remote())
         .and(warp::any().map(move || maxmind_reader.clone()))
         .and_then(
-            |(db, tracking_id), visitor_id, session_start, socket_addr, maxmind_reader| async move {
+            |(db, tracking_id), visitor_id, session_start, remote_addr, maxmind_reader| async move {
                 let reply = handlers::session_start(
                     db,
                     tracking_id,
                     visitor_id,
                     session_start,
-                    socket_addr,
+                    remote_addr,
                     maxmind_reader,
                 )
                 .await?;

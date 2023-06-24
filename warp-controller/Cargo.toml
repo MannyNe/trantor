@@ -1,0 +1,10 @@
+[package]
+name = "warp-controller"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+domain = { path = "../domain" }
+services = { path = "../services" }
+pg-repositories = { path = "../pg-repositories" }
+warp = "0.3.5"

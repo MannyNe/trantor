@@ -2,6 +2,7 @@ pub mod admin;
 pub mod db;
 pub mod errors;
 pub mod middleware;
+pub mod services;
 pub mod session;
 pub mod utils;
 
@@ -59,14 +60,12 @@ pub async fn server(
 
     let launch_control_script = warp::path!("launch-control.js")
         .map(|| {
-            let resp = Response::builder()
+            Response::builder()
                 .header("content-type", "text/javascript")
                 .header("content-length", LAUNCH_CONTROL_JS.len())
                 .header("cache-control", "max-age=604800") // 7 days
                 .body(LAUNCH_CONTROL_JS)
-                .expect("Failed to build response for launch-control.js");
-
-            resp
+                .expect("Failed to build response for launch-control.js")
         })
         .with(compression::gzip());
 

@@ -1,0 +1,11 @@
+[package]
+name = "pg-repositories"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+domain = { path = "../domain" }
+sqlx = { version = "0.6.3", features = [
+  "runtime-tokio-native-tls",
+  "postgres",
+] }
