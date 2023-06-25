@@ -1,6 +1,6 @@
 use domain::{
     async_trait::async_trait, thiserror, GeoIpReader, GeoIpReaderError, Service, Session,
-    SessionRepositoryError, SessionsRepository, UserAgentParserError, UserAgentParserPort, Visitor,
+    SessionRepositoryError, SessionsRepository, UserAgentParser, UserAgentParserError, Visitor,
     VisitorRepositoryError, VisitorsRepository,
 };
 
@@ -16,7 +16,7 @@ impl<SR, VR, UAP, GIR> SessionStartService<SR, VR, UAP, GIR>
 where
     SR: SessionsRepository + Clone + Send,
     VR: VisitorsRepository + Clone + Send,
-    UAP: UserAgentParserPort + Clone + Send,
+    UAP: UserAgentParser + Clone + Send,
     GIR: GeoIpReader + Clone + Send,
 {
     pub fn new(sessions: SR, visitors: VR, user_agent_parser: UAP, geo_ip_reader: GIR) -> Self {
@@ -34,7 +34,7 @@ impl<SR, VR, UAP, GIR> Service for SessionStartService<SR, VR, UAP, GIR>
 where
     SR: SessionsRepository + Sync + Send + Clone,
     VR: VisitorsRepository + Sync + Send + Clone,
-    UAP: UserAgentParserPort + Sync + Send + Clone,
+    UAP: UserAgentParser + Sync + Send + Clone,
     GIR: GeoIpReader + Sync + Send + Clone,
 {
     type Error = SessionStartError;

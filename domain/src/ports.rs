@@ -36,7 +36,7 @@ pub enum VisitorRepositoryError {
 }
 
 #[async_trait]
-pub trait UserAgentParserPort {
+pub trait UserAgentParser {
     async fn parse(&self, user_agent: &str) -> Result<UserAgent, UserAgentParserError>;
 }
 

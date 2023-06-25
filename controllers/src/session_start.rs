@@ -1,5 +1,5 @@
 use domain::{
-    serde, GeoIpReader, Service, SessionsRepository, UserAgentParserPort, VisitorsRepository,
+    serde, GeoIpReader, Service, SessionsRepository, UserAgentParser, VisitorsRepository,
 };
 use services::{SessionStartError, SessionStartRequest, SessionStartResponse, SessionStartService};
 
@@ -58,29 +58,13 @@ fn make_request(
     )
 }
 
-fn make_start_session_response(resp: SessionStartResponse) -> warp::reply::Response {
-    Response::builder()
-        .status(StatusCode::OK)
-        .header("Set-Cookie", format!("visitor_id={}", resp.visitor_id()))
-        .header("Set-Cookie", format!("session_id={}", resp.session_id()))
-        .body(warp::hyper::Body::empty())
-        .expect("failed to create session start response")
-}
-
-fn make_start_session_error_response(_: SessionStartError) -> warp::reply::Response {
-    Response::builder()
-        .status(StatusCode::INTERNAL_SERVER_ERROR)
-        .body(warp::hyper::Body::empty())
-        .unwrap()
-}
-
-pub fn session_start_filter<SR, VR, UAP, GIR>(
+pub(crate) fn session_start_filter<SR, VR, UAP, GIR>(
     service: SessionStartService<SR, VR, UAP, GIR>,
 ) -> impl warp::Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone
 where
     SR: SessionsRepository + Clone + Send + Sync,
     VR: VisitorsRepository + Clone + Send + Sync,
-    UAP: UserAgentParserPort + Clone + Send + Sync,
+    UAP: UserAgentParser + Clone + Send + Sync,
     GIR: GeoIpReader + Clone + Send + Sync,
 {
     warp_service(service)
@@ -95,11 +79,27 @@ async fn session_start_handler<SR, VR, UAP, GIR>(
 where
     SR: SessionsRepository + Clone + Send + Sync,
     VR: VisitorsRepository + Clone + Send + Sync,
-    UAP: UserAgentParserPort + Clone + Send + Sync,
+    UAP: UserAgentParser + Clone + Send + Sync,
     GIR: GeoIpReader + Clone + Send + Sync,
 {
     Ok(match service.execute(request).await {
         Ok(resp) => make_start_session_response(resp),
         Err(err) => make_start_session_error_response(err),
     })
+}
+
+fn make_start_session_response(resp: SessionStartResponse) -> warp::reply::Response {
+    Response::builder()
+        .status(StatusCode::OK)
+        .header("Set-Cookie", format!("visitor_id={}", resp.visitor_id()))
+        .header("Set-Cookie", format!("session_id={}", resp.session_id()))
+        .body(warp::hyper::Body::empty())
+        .expect("failed to create session start response")
+}
+
+fn make_start_session_error_response(_: SessionStartError) -> warp::reply::Response {
+    Response::builder()
+        .status(StatusCode::INTERNAL_SERVER_ERROR)
+        .body(warp::hyper::Body::empty())
+        .unwrap()
 }

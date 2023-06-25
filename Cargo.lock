@@ -208,6 +208,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "controllers"
+version = "0.1.0"
+dependencies = [
+ "domain",
+ "pg-repositories",
+ "services",
+ "warp",
+]
+
+[[package]]
 name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -866,6 +876,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "abb12e687cfb44aa40f41fc3978ef76448f9b6038cad6aef4259d3c095a2382e"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "main"
+version = "0.1.0"
+dependencies = [
+ "color-eyre",
+ "controllers",
+ "domain",
+ "maxminddb",
+ "pg-repositories",
+ "services",
+ "tokio",
+ "uaparser",
 ]
 
 [[package]]
@@ -2230,16 +2254,6 @@ dependencies = [
  "tokio-util",
  "tower-service",
  "tracing",
-]
-
-[[package]]
-name = "warp-controller"
-version = "0.1.0"
-dependencies = [
- "domain",
- "pg-repositories",
- "services",
- "warp",
 ]
 
 [[package]]

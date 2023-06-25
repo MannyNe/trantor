@@ -35,4 +35,4 @@ domain = { path = "domain" }
 opt-level = 3
 
 [workspace]
-members = ["domain", "pg-repositories", "services", "warp-controller"]
+members = ["domain", "pg-repositories", "services", "controllers", "main"]
