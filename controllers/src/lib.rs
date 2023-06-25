@@ -1,12 +1,13 @@
+mod session_end;
 mod session_start;
 
 use std::convert::Infallible;
-
-use services::SessionStartService;
-use session_start::session_start_filter;
+use warp::{Filter, Rejection, Reply};
 
 use domain::{serde::Serialize, tracing, Service};
-use warp::{Filter, Rejection, Reply};
+use services::{SessionEndService, SessionStartService};
+use session_end::session_end_filter;
+use session_start::session_start_filter;
 
 pub use warp;
 
@@ -18,6 +19,7 @@ pub(crate) fn warp_service<S: Service + Clone + Send + Sync>(
 
 pub struct Controllers<SR, VR, UAP, GIR> {
     session_start: SessionStartService<SR, VR, UAP, GIR>,
+    session_end: SessionEndService<SR>,
 }
 
 impl<SR, VR, UAP, GIR> Controllers<SR, VR, UAP, GIR>
@@ -29,8 +31,12 @@ where
 {
     pub fn new(
         session_start: SessionStartService<SR, VR, UAP, GIR>,
+        session_end: SessionEndService<SR>,
     ) -> Controllers<SR, VR, UAP, GIR> {
-        Controllers { session_start }
+        Controllers {
+            session_start,
+            session_end,
+        }
     }
 
     pub fn routes(
@@ -43,7 +49,6 @@ where
                 "Origin",
                 "Content-Type",
                 "x-tracking-id",
-                "x-source-name",
                 "Authorization",
                 "Content-Length",
                 "Access-Control-Allow-Origin",
@@ -57,7 +62,7 @@ where
         let session_end = warp::path("end")
             .and(warp::path::end())
             .and(warp::post())
-            .and(warp::any().map(|| "OK"));
+            .and(session_end_filter(self.session_end));
         let session_routes = warp::path("sessions").and(session_start.or(session_end));
         let analytics_routes = warp::path("analytics").map(|| "OK");
 
@@ -88,13 +93,13 @@ async fn recover(err: Rejection) -> Result<impl Reply, Infallible> {
         message = "NOT_FOUND".to_owned();
     } else if let Some(err) = err.find::<warp::filters::body::BodyDeserializeError>() {
         code = StatusCode::BAD_REQUEST;
-        message = err.clone().to_string();
+        message = err.to_string();
     } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
         code = StatusCode::METHOD_NOT_ALLOWED;
         message = "METHOD_NOT_ALLOWED".to_owned();
-    } else if err.find::<warp::reject::MissingHeader>().is_some() {
+    } else if let Some(err) = err.find::<warp::reject::MissingHeader>() {
         code = StatusCode::BAD_REQUEST;
-        message = "MISSING_HEADER".to_owned();
+        message = format!("MISSING_HEADER: {}", err.name());
     } else {
         code = StatusCode::INTERNAL_SERVER_ERROR;
         message = "UNHANDLED_REJECTION".to_owned();
@@ -102,7 +107,7 @@ async fn recover(err: Rejection) -> Result<impl Reply, Infallible> {
 
     let json = warp::reply::json(&ErrorMessage {
         code: code.as_u16(),
-        message: message.into(),
+        message,
     });
 
     Ok(warp::reply::with_status(json, code))

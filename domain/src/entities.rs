@@ -64,6 +64,34 @@ impl Session {
     }
 }
 
+pub struct SessionEnd {
+    session_id: String,
+    tracking_id: String,
+    timestamp: f64,
+}
+
+impl SessionEnd {
+    pub fn new(session_id: String, tracking_id: String, timestamp: f64) -> Self {
+        Self {
+            session_id,
+            tracking_id,
+            timestamp,
+        }
+    }
+
+    pub fn session_id(&self) -> &str {
+        &self.session_id
+    }
+
+    pub fn tracking_id(&self) -> &str {
+        &self.tracking_id
+    }
+
+    pub fn timestamp(&self) -> f64 {
+        self.timestamp
+    }
+}
+
 pub struct Location {
     country_code: Option<String>,
     city_name: Option<String>,

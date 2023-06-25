@@ -99,7 +99,6 @@ pub struct SessionStartRequest {
 impl SessionStartRequest {
     pub fn new(
         tracking_id: String,
-        source_name: Option<String>,
         visitor_id: Option<String>,
         remote_ip: std::net::IpAddr,
         user_agent: String,
@@ -108,6 +107,7 @@ impl SessionStartRequest {
         title: String,
         pathname: String,
         referral: Option<String>,
+        source_name: Option<String>,
     ) -> Self {
         Self {
             tracking_id,

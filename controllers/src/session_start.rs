@@ -17,13 +17,13 @@ struct SessionStart {
     title: String,
     pathname: String,
     referral: Option<String>,
+    source_name: Option<String>,
 }
 
 fn extract_session_start_request(
 ) -> impl warp::Filter<Extract = (SessionStartRequest,), Error = warp::Rejection> + Clone {
     warp::header("x-tracking-id")
-        .and(warp::header::optional("x-source-name"))
-        .and(warp::header::optional("x-visitor-id"))
+        .and(warp::cookie::optional("visitor_id"))
         .and(warp::header("user-agent"))
         .and(warp::header("referer"))
         .and(warp::addr::remote())
@@ -33,7 +33,6 @@ fn extract_session_start_request(
 
 fn make_request(
     tracking_id: String,
-    source_name: Option<String>,
     visitor_id: Option<String>,
     user_agent: String,
     referer: String,
@@ -46,7 +45,6 @@ fn make_request(
 
     SessionStartRequest::new(
         tracking_id,
-        source_name,
         visitor_id,
         remote_ip,
         user_agent,
@@ -55,6 +53,7 @@ fn make_request(
         session_start.title,
         session_start.pathname,
         session_start.referral,
+        session_start.source_name,
     )
 }
 

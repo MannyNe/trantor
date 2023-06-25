@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use thiserror::Error;
 
-use crate::{Location, Session, UserAgent, Visitor};
+use crate::{Location, Session, SessionEnd, UserAgent, Visitor};
 
 #[async_trait]
 pub trait Service {
@@ -15,6 +15,7 @@ pub trait Service {
 #[async_trait]
 pub trait SessionsRepository {
     async fn create(&self, session: &Session) -> Result<String, SessionRepositoryError>;
+    async fn end_session(&self, session_end: &SessionEnd) -> Result<(), SessionRepositoryError>;
 }
 
 #[derive(Debug, Error)]

@@ -5,7 +5,7 @@ use color_eyre::{
 
 use controllers::{warp, Controllers};
 use pg_repositories::{sqlx::PgPool, PgSessionsRepository, PgVisitorsRepository};
-use services::SessionStartService;
+use services::{SessionEndService, SessionStartService};
 
 mod ua_parser;
 use ua_parser::UAParser;
@@ -36,20 +36,16 @@ async fn main() -> Result<()> {
             )
         })?;
 
+    let sessions = PgSessionsRepository::new(&pool);
+    let visitors = PgVisitorsRepository::new(&pool);
     let user_agent_parser = UAParser::new();
-    let sessions = PgSessionsRepository::new(pool.clone());
-    let visitors = PgVisitorsRepository::new(pool);
-    let geo_ip_reader = MaxmindGeoIpReader::new(config.maxminddb_path()).wrap_err_with(|| {
-        format!(
-            "couldn't open geolite2 city database file: {}",
-            config.maxminddb_path()
-        )
-    })?;
+    let geo_ip_reader = MaxmindGeoIpReader::new(config.maxminddb_path())?;
 
     let session_start_service =
-        SessionStartService::new(sessions, visitors, user_agent_parser, geo_ip_reader);
+        SessionStartService::new(sessions.clone(), visitors, user_agent_parser, geo_ip_reader);
+    let session_end_service = SessionEndService::new(sessions);
 
-    let controllers = Controllers::new(session_start_service);
+    let controllers = Controllers::new(session_start_service, session_end_service);
     let routes = controllers.routes();
 
     warp::serve(routes).run(config.address()).await;
@@ -59,7 +55,7 @@ async fn main() -> Result<()> {
 
 fn make_config() -> Result<Config> {
     let args: Vec<String> = std::env::args().collect();
-    let config_path = &args.get(1).ok_or_else(|| eyre!("Missing config path"))?;
+    let config_path = &args.get(1).ok_or_else(|| eyre!("missing config path"))?;
     let config = Config::from_file(&config_path)?;
     Ok(config)
 }

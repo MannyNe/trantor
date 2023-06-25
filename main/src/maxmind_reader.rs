@@ -1,3 +1,4 @@
+use color_eyre::eyre::Context;
 use domain::{async_trait::async_trait, tracing, GeoIpReader, GeoIpReaderError, Location};
 use std::sync::Arc;
 
@@ -7,8 +8,9 @@ pub struct MaxmindGeoIpReader {
 }
 
 impl MaxmindGeoIpReader {
-    pub fn new(database: &str) -> Result<Self, maxminddb::MaxMindDBError> {
-        let reader = maxminddb::Reader::open_readfile(database)?;
+    pub fn new(database: &str) -> color_eyre::Result<Self> {
+        let reader = maxminddb::Reader::open_readfile(database)
+            .wrap_err_with(|| format!("couldn't open geolite2 city database file: {}", database))?;
         Ok(Self {
             reader: Arc::new(reader),
         })

@@ -1,6 +1,6 @@
 use domain::{
-    async_trait::async_trait, tracing, Session, SessionRepositoryError, SessionsRepository,
-    Visitor, VisitorRepositoryError, VisitorsRepository,
+    async_trait::async_trait, tracing, Session, SessionEnd, SessionRepositoryError,
+    SessionsRepository, Visitor, VisitorRepositoryError, VisitorsRepository,
 };
 
 pub use sqlx;
@@ -13,8 +13,8 @@ pub struct PgSessionsRepository {
 }
 
 impl PgSessionsRepository {
-    pub fn new(pool: sqlx::PgPool) -> Self {
-        Self { pool }
+    pub fn new(pool: &sqlx::PgPool) -> Self {
+        Self { pool: pool.clone() }
     }
 }
 
@@ -73,6 +73,30 @@ values (
 
         Ok(record.session_id)
     }
+
+    async fn end_session(&self, session_end: &SessionEnd) -> Result<(), SessionRepositoryError> {
+        sqlx::query!(
+            r#"
+update sessions
+set ended_at = CURRENT_TIMESTAMP,
+  end_timestamp = TO_TIMESTAMP($1)
+where tracking_id = (
+    select id
+    from trackings
+    where tracking_id = $2
+  )
+  and session_id = $3
+"#,
+            session_end.timestamp(),
+            session_end.tracking_id(),
+            session_end.session_id()
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(SqlxError)?;
+
+        Ok(())
+    }
 }
 
 impl From<SqlxError> for SessionRepositoryError {
@@ -88,8 +112,8 @@ pub struct PgVisitorsRepository {
 }
 
 impl PgVisitorsRepository {
-    pub fn new(pool: sqlx::PgPool) -> Self {
-        Self { pool }
+    pub fn new(pool: &sqlx::PgPool) -> Self {
+        Self { pool: pool.clone() }
     }
 }
 
