@@ -1,0 +1,4 @@
+address = "127.0.0.1:3030"
+database = "postgresql://postgres:password@localhost:5432/trantor"
+maxminddb = "../../GeoLite2-City_20230616/GeoLite2-City.mmdb"
+

@@ -5,7 +5,7 @@ use std::convert::Infallible;
 use services::SessionStartService;
 use session_start::session_start_filter;
 
-use domain::Service;
+use domain::{serde::Serialize, tracing, Service};
 use warp::{Filter, Rejection, Reply};
 
 pub use warp;
@@ -50,10 +50,16 @@ where
             ])
             .allow_credentials(true);
 
-        let session_start = warp::path("start").and(session_start_filter(self.session_start));
-        let session_end = warp::path!("end").and(warp::any().map(|| "OK"));
-        let session_routes = warp::path!("sessions").and(session_start.or(session_end));
-        let analytics_routes = warp::path!("analytics").map(|| "OK");
+        let session_start = warp::path("start")
+            .and(warp::path::end())
+            .and(warp::post())
+            .and(session_start_filter(self.session_start));
+        let session_end = warp::path("end")
+            .and(warp::path::end())
+            .and(warp::post())
+            .and(warp::any().map(|| "OK"));
+        let session_routes = warp::path("sessions").and(session_start.or(session_end));
+        let analytics_routes = warp::path("analytics").map(|| "OK");
 
         session_routes
             .or(analytics_routes)
@@ -62,9 +68,42 @@ where
     }
 }
 
-async fn recover(_: Rejection) -> Result<impl Reply, Infallible> {
-    Ok(warp::reply::with_status(
-        warp::reply::json(&"Internal Server Error"),
-        warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-    ))
+#[derive(Serialize)]
+#[serde(crate = "domain::serde")]
+struct ErrorMessage {
+    code: u16,
+    message: String,
+}
+
+async fn recover(err: Rejection) -> Result<impl Reply, Infallible> {
+    use warp::http::StatusCode;
+
+    let code: StatusCode;
+    let message: String;
+
+    tracing::error!("unhandled rejection: {:?}", err);
+
+    if err.is_not_found() {
+        code = StatusCode::NOT_FOUND;
+        message = "NOT_FOUND".to_owned();
+    } else if let Some(err) = err.find::<warp::filters::body::BodyDeserializeError>() {
+        code = StatusCode::BAD_REQUEST;
+        message = err.clone().to_string();
+    } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
+        code = StatusCode::METHOD_NOT_ALLOWED;
+        message = "METHOD_NOT_ALLOWED".to_owned();
+    } else if err.find::<warp::reject::MissingHeader>().is_some() {
+        code = StatusCode::BAD_REQUEST;
+        message = "MISSING_HEADER".to_owned();
+    } else {
+        code = StatusCode::INTERNAL_SERVER_ERROR;
+        message = "UNHANDLED_REJECTION".to_owned();
+    }
+
+    let json = warp::reply::json(&ErrorMessage {
+        code: code.as_u16(),
+        message: message.into(),
+    });
+
+    Ok(warp::reply::with_status(json, code))
 }

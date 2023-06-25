@@ -889,6 +889,8 @@ dependencies = [
  "pg-repositories",
  "services",
  "tokio",
+ "toml",
+ "tracing-subscriber",
  "uaparser",
 ]
 
